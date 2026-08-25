@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Softoy RPG — Organic Bed Plains Test</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#08111f;color:#173044}
+button{border:0;border-radius:14px;padding:12px 16px;font-weight:800;font-size:15px;cursor:pointer}
+button:disabled{opacity:.45}
+.screen{position:absolute;inset:0;display:none}
+.screen.active{display:block}
+.hidden{display:none!important}
+.primary{background:#4b9ee8;color:#fff}
+.panel{background:#ffffffee;border-radius:22px;box-shadow:0 16px 50px #0005}
+.overlay{z-index:100;display:none;align-items:center;justify-content:center;background:#07111dcc}
+.overlay.active{display:flex}
+.message{width:min(680px,92vw);max-height:88vh;overflow:auto;padding:26px;text-align:center}
+.message h1{margin:0 0 10px}
+.message p{font-size:17px;line-height:1.5}
+.small{font-size:13px;color:#607080}
+
+/* HOME */
+#home{background:linear-gradient(135deg,#07111f,#101b2e 55%,#0a1425);color:#fff}
+.homeLogo{position:absolute;left:10%;top:17%;font-size:46px;font-weight:1000;letter-spacing:2px}
+.homeSub{position:absolute;left:10%;top:27%;color:#9fb2c8}
+.homeButtons{position:absolute;left:10%;top:38%;width:min(390px,78vw);display:grid;gap:14px}
+.homeButtons button{padding:18px;background:#16263b;color:#fff;border:1px solid #ffffff22;text-align:left;font-size:18px}
+
+/* WORLD */
+#gameWorld{background:#a8dc73;overflow:hidden}
+#worldViewport{position:absolute;inset:0;overflow:hidden}
+#worldCamera{position:absolute;width:3200px;height:2100px;transform-origin:0 0}
+.worldGround{position:absolute;inset:0;background:#8bc85d}
+.grassPatch{position:absolute;background:#7cbb55;border-radius:50%;opacity:.7}
+.water{position:absolute;background:#55b9df;border:7px solid #3797be}
+.path{position:absolute;background:#d8b07a;border-radius:70px;transform:rotate(-8deg)}
+.path2{position:absolute;background:#d8b07a;border-radius:70px;transform:rotate(17deg)}
+.cliff{position:absolute;background:#9b815f;border-radius:50%;border:8px solid #786044}
+.rock{position:absolute;font-size:48px}
+.tree{position:absolute;font-size:55px;z-index:5}
+.bridgeWorld{position:absolute;background:#8b5a37;border:7px solid #5c3925;border-radius:14px}
+.areaGate{position:absolute;background:#4e6470;border:5px solid #34404a;border-radius:16px;color:#fff;font-weight:900;padding:12px;z-index:8}
+.landmark{position:absolute;background:#ffffffd9;border-radius:14px;padding:8px 11px;font-weight:900;z-index:8}
+.player{position:absolute;width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:45px;z-index:30}
+.entity{position:absolute;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:15;user-select:none}
+.entity .sprite{font-size:38px}
+.entity .name{font-size:11px;font-weight:900;background:#ffffffdd;border-radius:8px;padding:2px 5px;white-space:nowrap}
+.enemyWorld{cursor:pointer}
+.enemyWorld .sprite{font-size:40px}
+.chest,.cageWorld,.npc{cursor:pointer}
+.worldTop{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;gap:8px;z-index:50;pointer-events:none}
+.worldTop>*{pointer-events:auto}
+.badge{background:#ffffffdd;padding:10px 13px;border-radius:13px;font-weight:900}
+.topBtns{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.topBtns button{background:#ffffffdd}
+.hudBottom{position:absolute;left:180px;right:18px;bottom:18px;z-index:50;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.hudCard{background:#ffffffdd;border-radius:14px;padding:9px 12px;font-weight:800}
+
+/* JOYSTICK */
+.joystick{position:absolute;bottom:18px;left:18px;width:145px;height:145px;z-index:60}
+.joyBase{position:absolute;inset:0;border-radius:50%;background:#ffffff45;border:2px solid #fff8}
+.joyKnob{position:absolute;left:44px;top:44px;width:58px;height:58px;border-radius:50%;background:#ffffffcc}
+.joyGrid{position:absolute;right:18px;bottom:18px;z-index:60;display:grid;grid-template-columns:repeat(3,48px);gap:5px}
+.joyGrid button{padding:0;width:48px;height:44px;background:#ffffffbb}
+
+/* BATTLE */
+#battle{background:linear-gradient(#8bdcf4 0 48%,#b8e66d 48%);z-index:70}
+.battleTop{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;z-index:5}
+.battleArena{position:absolute;inset:0}
+.bChar{position:absolute;width:180px;text-align:center}
+.bChar .bSprite{font-size:78px}
+.bName{font-weight:900;background:#ffffffdd;border-radius:9px;padding:4px}
+.hpBar{height:10px;background:#d6dce1;border-radius:20px;overflow:hidden;margin-top:5px}
+.hpFill{height:100%;background:#5bc85a;width:100%}
+.bHechie{left:8%;top:53%}
+.bEnemy{right:10%;top:32%}
+.bControls{position:absolute;left:0;right:0;bottom:0;padding:12px;background:#eefaffee;display:flex;justify-content:center;gap:8px;z-index:10;flex-wrap:wrap}
+.bMessage{position:absolute;left:50%;bottom:88px;transform:translateX(-50%);width:min(720px,92vw);background:#ffffffee;border-radius:14px;padding:10px;text-align:center;font-weight:900;z-index:9}
+.tutorialHint{position:absolute;left:50%;top:18%;transform:translateX(-50%);width:min(620px,88vw);background:#17263fee;color:#fff;border:2px solid #ffffff66;border-radius:18px;padding:18px;z-index:80;text-align:center}
+.damage{position:fixed;color:#d33;font-size:30px;font-weight:1000;z-index:200;animation:float 1s forwards;pointer-events:none}
+@keyframes float{from{opacity:0;transform:translate(-50%,10px)}20%{opacity:1}to{opacity:0;transform:translate(-50%,-55px)}}
+
+/* MANAGE / SETTINGS */
+#manage{background:#75badaee;z-index:80}
+.managePanel{position:absolute;inset:5%;background:#e0f6ffef;border-radius:24px;display:flex;flex-direction:column;overflow:hidden}
+.manageHead{padding:12px 18px;border-bottom:1px solid #ffffffaa;display:flex;justify-content:space-between;align-items:center}
+.manageBody{display:flex;flex:1;min-height:0}
+.sideMenu{width:155px;padding:14px;display:flex;flex-direction:column;gap:8px;border-right:1px solid #ffffffaa}
+.sideMenu button{text-align:left;background:#ffffff99}
+.sideMenu button.selected{background:#4b9ee8;color:#fff}
+.squadArea{flex:1;padding:16px;overflow:auto}
+.squadGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.slot{min-height:72px;background:#ffffff88;border:2px solid #ffffffaa;border-radius:17px;display:flex;align-items:center;justify-content:center;font-weight:900}
+.menuCard{background:#ffffff88;border-radius:17px;padding:15px;margin-bottom:10px}
+.menuRow{background:#fff9;border-radius:13px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;gap:8px;align-items:center}
+#settings{background:linear-gradient(#8bdcf4,#b8e66d);z-index:80}
+.settingsPanel{width:min(620px,90vw);padding:24px;max-height:90vh;overflow:auto}
+.storyList{display:grid;gap:10px;margin:15px 0}
+.storyCard{background:#ffffff18;border:1px solid #ffffff25;border-radius:15px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+#mapOverlay{z-index:90;background:#07111dcc}
+.mapPanel{width:min(760px,92vw);padding:22px;color:#173044}
+.mapRoute{text-align:center;font-weight:900;line-height:2}
+.mapRoute span{display:inline-block;padding:6px 10px;background:#e8f5ff;border-radius:10px}
+
+@media(max-width:700px){
+ .homeLogo{left:8%;top:12%;font-size:34px}.homeSub{left:8%;top:21%}.homeButtons{left:8%;top:31%;width:84%}
+ .sideMenu{width:112px}.bChar{width:120px}.bChar .bSprite{font-size:55px}
+ .hudBottom{left:175px}.joyGrid{right:10px}.joystick{left:10px;bottom:10px}
+}
+</style>
+</head>
+
+<body>
+
+<section id="home" class="screen active">
+ <div class="homeLogo">SOFTOY RPG</div>
+ <div class="homeSub">Playable Test • Organic Bed Plains</div>
+ <div class="homeButtons">
+  <button onclick="newStory()">▶ New Story</button>
+  <button onclick="continueStory()">↻ Continue Story</button>
+  <button onclick="showStories()">▣ See All Stories</button>
+ </div>
+</section>
+
+<section id="gameWorld" class="screen">
+ <div id="worldViewport">
+  <div id="worldCamera">
+   <div class="worldGround"></div>
+   <div id="worldCanvas"></div>
+   <div id="player" class="player">🦔</div>
+  </div>
+ </div>
+
+ <div class="worldTop">
+  <div class="badge" id="areaBadge">🏘️ Softoy Village</div>
+  <div class="topBtns">
+   <button onclick="openManage()">👥 Manage Squad</button>
+   <button onclick="openInventory()">🎒 Inventory</button>
+   <button onclick="openSettings()">⚙️</button>
+   <button onclick="showMap()">🗺️</button>
+  </div>
+ </div>
+
+ <div class="joystick" id="joystick">
+  <div class="joyBase"></div>
+  <div id="joyKnob" class="joyKnob"></div>
+ </div>
+
+ <div class="joyGrid">
+  <button onclick="movePlayer(0,-1)">▲</button>
+  <button onclick="interact()">●</button>
+  <button onclick="movePlayer(0,1)">▼</button>
+  <button onclick="movePlayer(-1,0)">◀</button>
+  <button onclick="movePlayer(1,0)">▶</button>
+ </div>
+
+ <div class="hudBottom">
+  <div class="hudCard" id="hpHud">❤️ 105/105</div>
+  <div class="hudCard" id="xpHud">⭐ Lv. 1 • 0/100 EXP</div>
+  <div class="hudCard" id="coinHud">🪙 120 DD</div>
+  <div class="hudCard" id="questHud">📜 No active quest</div>
+ </div>
+</section>
+
+<section id="battle" class="screen">
+ <div class="battleTop">
+  <div class="badge">🦔 HECHIE</div>
+  <div class="badge">ENEMY • Lv. <span id="enemyLevel">1</span></div>
+ </div>
+ <div class="battleArena">
+  <div class="bChar bHechie">
+   <div class="bSprite">🦔</div>
+   <div class="bName">Hechie</div>
+   <div class="hpBar"><div id="bHechieHP" class="hpFill"></div></div>
+  </div>
+  <div class="bChar bEnemy">
+   <div class="bSprite" id="enemySprite">🦊</div>
+   <div class="bName" id="enemyName">Eddie Minion</div>
+   <div class="hpBar"><div id="bEnemyHP" class="hpFill"></div></div>
+  </div>
+ </div>
+ <div id="battleMessage" class="bMessage">Battle begins!</div>
+ <div id="tutorialHint" class="tutorialHint hidden"></div>
+ <div class="bControls">
+  <button id="attackBtn" class="primary" onclick="battleAttack()">⚔️ Attack</button>
+  <button onclick="battleAbility()">✨ Ability</button>
+  <button onclick="battleItem()">🎒 Item</button>
+  <button onclick="tryRun()">🏃 Run</button>
+ </div>
+</section>
+
+<section id="manage" class="screen">
+ <div class="managePanel">
+  <div class="manageHead">
+   <h2>MANAGE SQUAD</h2>
+   <button onclick="closeManage()">✕</button>
+  </div>
+  <div class="manageBody">
+   <div class="sideMenu">
+    <button onclick="renderManage('squad')">👥 SQUAD</button>
+    <button onclick="renderManage('items')">🎒 ITEMS</button>
+    <button onclick="renderManage('quests')">📜 QUESTS</button>
+    <button onclick="renderManage('abilities')">✨ ABILITIES</button>
+    <button onclick="renderManage('equipment')">🛡️ EQUIPMENT</button>
+    <button onclick="renderWholeSquad()">↔️ WHOLE SQUAD</button>
+   </div>
+   <div id="manageContent" class="squadArea"></div>
+  </div>
+ </div>
+</section>
+
+<section id="settings" class="screen">
+ <div class="settingsPanel panel">
+  <h1>⚙️ Settings</h1>
+  <p>Music: <button id="musicBtn" onclick="toggleMusic()">🔊 ON</button></p>
+  <button class="primary" onclick="manualSave()">💾 Save Game</button>
+  <button onclick="closeSettings()">↩️ Back to Game</button>
+ </div>
+</section>
+
+<section id="mapOverlay" class="screen overlay">
+ <div class="mapPanel panel">
+  <h1>🗺️ Softoy World Route</h1>
+  <div class="mapRoute">
+   <span>🏘️ Softoy Village</span> →
+   <span>🌱 Bed Plains</span> →
+   <span>🌲 Pillow Forest</span> →
+   <span>🌊 Softoy Seas</span><br>
+   ↓<br>
+   <span>🏭 Eddie's Factory</span> →
+   <span>🌋 Lava Lake Mountains</span> →
+   <span>🏰 Eddie's Castle</span>
+  </div>
+  <hr>
+  <p><b>Current test:</b> Softoy Village + large organic Bed Plains.</p>
+  <p>Lost Caves and the Double Jump entrance are marked but their areas are not playable yet.</p>
+  <button onclick="closeMap()">Close</button>
+ </div>
+</section>
+
+<section id="modal" class="screen overlay">
+ <div class="message panel">
+  <h1 id="modalTitle"></h1>
+  <p id="modalText"></p>
+  <div id="modalExtra"></div>
+  <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap">
+   <button id="modalYes" class="primary">Continue</button>
+   <button id="modalNo" class="hidden">Cancel</button>
+  </div>
+ </div>
+</section>
+
+<section id="stories" class="screen" style="background:#07111f;color:#fff;z-index:120">
+ <div style="padding:28px;max-width:760px;margin:auto">
+  <h1>▣ All Stories</h1>
+  <p class="small" style="color:#a9bdd2">Maximum 3 stories.</p>
+  <div id="storyList" class="storyList"></div>
+  <button onclick="showScreen('home')">↩️ Back</button>
+ </div>
+</section>
+
+<script>
+const SAVE_KEY='softoyRPG_organic_bed_plains_v4';
+const MAX_STORIES=3;
+
+const XP_TABLE=[
+  0,100,150,300,450,600,750,925,1150,1400,
+  1750,1975,2250,2575,2900,3300,3700,4150,4600,5200,
+  5800,6400,7200,8000,8800,9600,10400,11200,12000,13000
+];
+
+const WORLD_W=3200;
+const WORLD_H=2100;
+const PLAYER_SPEED=7;
+
+const defaults=()=>({
+ storyName:'Story 1',
+ area:'village',
+ checkpoint:'village',
+ player:{
+  x:500,y:1000,
+  hp:105,maxHp:105,
+  level:1,xp:0,
+  attack:13,defence:7,speed:11,
+  energy:105,maxEnergy:105
+ },
+ roster:['Hechie',null,null,null,null,null,null,null],
+ unlocked:{Axol:false,Charmander:false},
+ coins:120,
+ inventory:{'Health Potion':3,'Antidote':2,'Energy Pill':1},
+ quests:{active:null,completed:[]},
+ village:{rescuedVillager:false,questGiven:false,questComplete:false},
+ chests:{v1:false,v2:false,b1:false,b2:false},
+ tutorialDone:false,
+ music:true,
+ lastPlayed:Date.now()
+});
+
+let stories=[];
+let game=null;
+let battle=null;
+let keys={};
+let joystickActive=false;
+let joystickX=0;
+let joystickY=0;
+let enemySpawnTimer=0;
+let cameraX=0;
+let cameraY=0;
+
+function loadStories(){
+ try{stories=JSON.parse(localStorage.getItem(SAVE_KEY)||'[]')}
+ catch(e){stories=[]}
+}
+
+function saveStories(){
+ localStorage.setItem(SAVE_KEY,JSON.stringify(stories));
+}
+
+function storyIndex(){
+ return stories.findIndex(s=>s.storyName===game.storyName);
+}
+
+function syncStory(){
+ if(!game)return;
+ game.lastPlayed=Date.now();
+ const i=storyIndex();
+ if(i>=0)stories[i]=structuredClone(game);
+ saveStories();
+}
+
+function showScreen(id){
+ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+}
+
+function modal(title,text,yes=()=>{},no=null,extra=''){
+ document.getElementById('modalTitle').textContent=title;
+ document.getElementById('modalText').innerHTML=text;
+ document.getElementById('modalExtra').innerHTML=extra;
+ const y=document.getElementById('modalYes');
+ const n=document.getElementById('modalNo');
+
+ y.onclick=()=>{
+  document.getElementById('modal').classList.remove('active');
+  yes();
+ };
+
+ n.classList.toggle('hidden',!no);
+
+ if(no)n.onclick=()=>{
+  document.getElementById('modal').classList.remove('active');
+  no();
+ };
+
+ document.getElementById('modal').classList.add('active');
+}
+
+function newStory(){
+ loadStories();
+
+ if(stories.length>=MAX_STORIES){
+  modal('Story Limit Reached','You already have 3 stories. Delete one before creating another.');
+  return;
+ }
+
+ let n=1;
+ while(stories.some(s=>s.storyName==='Story '+n))n++;
+
+ game=defaults();
+ game.storyName='Story '+n;
+
+ stories.push(structuredClone(game));
+ saveStories();
+
+ startNewGame();
+}
+
+function continueStory(){
+ loadStories();
+
+ if(!stories.length){
+  modal('No Stories','Create a New Story first.');
+  return;
+ }
+
+ stories.sort((a,b)=>(b.lastPlayed||0)-(a.lastPlayed||0));
+ game=structuredClone(stories[0]);
+ startNewGame();
+}
+
+function showStories(){
+ loadStories();
+
+ document.getElementById('storyList').innerHTML=stories.length
+ ?stories.map(s=>`
+  <div class="storyCard">
+   <div>
+    <b>${s.storyName}</b><br>
+    <span class="small" style="color:#a9bdd2">
+     ${s.area==='village'?'Softoy Village':'Bed Plains'} • Lv. ${s.player.level}
+    </span>
+   </div>
+   <div>
+    <button onclick="loadStory('${s.storyName}')">Play</button>
+    <button onclick="deleteStory('${s.storyName}')">Delete</button>
+   </div>
+  </div>
+ `).join('')
+ :'<p>No stories created yet.</p>';
+
+ showScreen('stories');
+}
+
+function loadStory(name){
+ const s=stories.find(x=>x.storyName===name);
+ if(!s)return;
+
+ game=structuredClone(s);
+ startNewGame();
+}
+
+function deleteStory(name){
+ modal(
+  'Delete Story?',
+  `Delete <b>${name}</b>? This cannot be undone.`,
+  ()=>{
+   stories=stories.filter(s=>s.storyName!==name);
+   saveStories();
+   showStories();
+  }
+ );
+}
+
+function startNewGame(){
+ renderWorld();
+ showScreen('gameWorld');
+ updateHUD();
+ startGameLoop();
+
+ if(game.area==='village'&&!game.tutorialDone){
+  setTimeout(showVillageIntro,400);
+ }
+}
+
+function showVillageIntro(){
+ modal(
+  'The Empty Village',
+  'The Softoy Village is silent. Everyone is gone except Hechie. Explore the village and find the trapped Villager.',
+  ()=>{}
+ );
+}
+
+/* =========================
+   WORLD RENDERING
+========================= */
+
+function renderWorld(){
+ const c=document.getElementById('worldCanvas');
+ c.innerHTML='';
+
+ document.getElementById('areaBadge').textContent=
+  game.area==='village'?'🏘️ Softoy Village':'🌱 Bed Plains';
+
+ if(game.area==='village'){
+  renderVillage();
+ }else{
+  renderBedPlains();
+ }
+
+ updatePlayer();
+ updateCamera();
+}
+
+function renderVillage(){
+ addPath(150,900,1050,160);
+ addPath2(850,350,180,700);
+
+ [
+  [250,350],[520,520],[1220,330],[1450,720],
+  [1850,400],[2180,760],[2600,430],[2850,900]
+ ].forEach((p,i)=>addTree(p[0],p[1],i));
+
+ addLandmark('🏘️ TOWN PLAZA',900,780);
+ addLandmark('🛒 Item Merchant',430,770);
+ addLandmark('🍳 Chef',1450,780);
+ addLandmark('🛡️ Armor Merchant',1850,790);
+ addLandmark('🔬 Researcher',2200,790);
+ addLandmark('📦 Storage Room',2550,790);
+
+ addEntity('chest','📦',600,950,'v1');
+ addEntity('chest','📦',2450,450,'v2');
+
+ addEntity('cage','🔒',1150,950,'cage');
+ addEntity('npc','🧸',1330,950,'villager');
+
+ addGate('➡️ BED PLAINS',3000,900,'gate');
+
+ if(game.village.rescuedVillager){
+  const cage=document.querySelector('[data-id="cage"]');
+  if(cage)cage.innerHTML='<div class="sprite">🟢</div><div class="name">Cage Empty</div>';
+  const npc=document.querySelector('[data-id="villager"]');
+  if(npc)npc.innerHTML='<div class="sprite">🧸</div><div class="name">Quest Villager</div>';
+ }
+
+ game.player.x=Math.max(100,Math.min(3100,game.player.x));
+ game.player.y=Math.max(250,Math.min(1800,game.player.y));
+}
+
+function renderBedPlains(){
+ /*
+  Organic map:
+  - Large central plain
+  - Curved eastern route
+  - Western lake
+  - Northern Lost Caves route
+  - Southern winding path
+  - Double Jump entrance landmark
+  - Village transition
+ */
+ addWater(250,300,520,340);
+ addWater(2350,1250,500,420);
+
+ addPath(0,960,800,150);
+ addPath2(620,1000,700,170);
+ addPath(1100,860,750,180);
+ addPath2(1550,650,700,160);
+ addPath(2100,500,720,160);
+ addPath2(2470,650,180,700);
+ addPath(1850,1250,700,170);
+ addPath2(1300,1300,600,150);
+ addPath2(850,1350,500,150);
+
+ addCliff(600,620,430,230);
+ addCliff(1650,300,480,260);
+ addCliff(1000,1570,500,250);
+
+ for(let i=0;i<58;i++){
+  const x=80+Math.random()*3000;
+  const y=100+Math.random()*1850;
+
+  if(Math.hypot(x-1600,y-1000)<300)continue;
+  if(x>2200&&y>1150&&x<2900&&y<1700)continue;
+
+  addTree(x,y,i);
+ }
+
+ for(let i=0;i<30;i++){
+  const x=100+Math.random()*3000;
+  const y=150+Math.random()*1800;
+  addGrass(x,y);
+ }
+
+ addLandmark('🕳️ LOST CAVES',350,210);
+ addLandmark('⬆️ DOUBLE JUMP AREA',2400,390);
+ addLandmark('🌉 AXOL BRIDGE',1280,850);
+ addLandmark('🏘️ VILLAGE',90,925);
+
+ addGate('🏘️ SOFTOY VILLAGE',70,930,'villageGate');
+
+ addBridge(1230,830,300,90);
+
+ addEntity('chest','📦',2250,460,'b1');
+ addEntity('chest','📦',2750,1450,'b2');
+
+ if(!document.querySelector('.enemyWorld')){
+  for(let i=0;i<9;i++)spawnEnemyOutsideSafeZone();
+ }
+}
+
+function addPath(x,y,w,h){
+ const d=document.createElement('div');
+ d.className='path';
+ Object.assign(d.style,{
+  left:x+'px',top:y+'px',width:w+'px',height:h+'px'
+ });
+ document.getElementById('worldCanvas').appendChild(d);
+}
+
+function addPath2(x,y,w,h){
+ const d=document.createElement('div');
+ d.className='path2';
+ Object.assign(d.style,{
+  left:x+'px',top:y+'px',width:w+'px',height:h+'px'
+ });
+ document.getElementById('worldCanvas').appendChild(d);
+}
+
+function addWater(x,y,w,h){
+ const d=document.createElement('div');
+ d.className='water';
+ Object.assign(d.style,{
+  left:x+'px',top:y+'px',width:w+'px',height:h+'px'
+ });
+ document.getElementById('worldCanvas').appendChild(d);
+}
+
+function addCliff(x,y,w,h){
+ const d=document.createElement('div');
+ d.className='cliff';
+ Object.assign(d.style,{
+  left:x+'px',top:y+'px',width:w+'px',height:h+'px'
+ });
+ document.getElementById('worldCanvas').appendChild(d);
+}
+
+function addGrass(x,y){
+ const d=document.createElement('div');
+ d.className='grassPatch';
+ Object.assign(d.style,{
+  left:x+'px',top:y+'px',
+  width:(40+Math.random()*80)+'px',
+  height:(25+Math.random()*55)+'px'
+ });
+ document.getElementById('worldCanvas').appendChild(d);
+}
+
+function addTree(x,y,i){
+ const d=document.createElement('div');
+ d.className='tree';
+ d.textContent=i%3===0?'🌲':'🌳';
+ d.style.left=x+'px';
+ d.style.top=y+'px';
+ document.getElementById('worldCanvas').appendChild(d);
+}
+
+function addLandmark(text,x,y){
+ const d=document.createElement('div');
+ d.className='landmark';
+ d.textContent=text;
+ d.style.left=x+'px';
+ d.style.top=y+'px';
+ document.getElementById('worldCanvas').appendChild(d);
+}
+
+function addBridge(x,y,w,h){
+ const d=document.createElement('div');
+ d.className='bridgeWorld';
+ Object.assign(d.style,{
+  left:x+'px',top:y+'px',width:w+'px',height:h+'px'
+ });
+ document.getElementById('worldCanvas').appendChild(d);
+}
+
+function addGate(text,x,y,id){
+ const d=document.createElement('div');
+ d.className='areaGate';
+ d.dataset.id=id;
+ d.textContent=text;
+ d.style.left=x+'px';
+ d.style.top=y+'px';
+
+ d.onclick=()=>{
+  if(id==='gate')enterBedPlains();
+  if(id==='villageGate')enterVillage();
+ };
+
+ document.getElementById('worldCanvas').appendChild(d);
+}
+
+function addEntity(type,sprite,x,y,id){
+ const d=document.createElement('div');
+ d.className='entity '+type;
+ d.dataset.id=id;
+ d.style.left=x+'px';
+ d.style.top=y+'px';
+
+ d.innerHTML=
+  `<div class="sprite">${sprite}</div>`+
+  (type==='npc'?'<div class="name">Villager</div>':'')+
+  (type==='chest'?'<div class="name">Chest</div>':'')+
+  (type==='cage'?'<div class="name">Cage</div>':'');
+
+ if(type==='chest')d.onclick=()=>openChest(id);
+ if(type==='cage')d.onclick=()=>interactCage();
+ if(type==='npc')d.onclick=()=>villagerTalk();
+
+ document.getElementById('worldCanvas').appendChild(d);
+ return d;
+}
+
+/* =========================
+   CAMERA
+========================= */
+
+function updatePlayer(){
+ const p=document.getElementById('player');
+
+ p.style.left=(game.player.x-32)+'px';
+ p.style.top=(game.player.y-32)+'px';
+}
+
+function updateCamera(){
+ const viewport=document.getElementById('worldViewport');
+ const vw=viewport.clientWidth;
+ const vh=viewport.clientHeight;
+
+ cameraX=game.player.x-vw/2;
+ cameraY=game.player.y-vh/2;
+
+ cameraX=Math.max(0,Math.min(WORLD_W-vw,cameraX));
+ cameraY=Math.max(0,Math.min(WORLD_H-vh,cameraY));
+
+ document.getElementById('worldCamera').style.transform=
+  `translate(${-cameraX}px,${-cameraY}px)`;
+}
+
+/* =========================
+   MOVEMENT
+========================= */
+
+function movePlayer(dx,dy){
+ if(!game||game.area==='battle')return;
+
+ const nx=game.player.x+dx*PLAYER_SPEED*5;
+ const ny=game.player.y+dy*PLAYER_SPEED*5;
+
+ if(!isWalkable(nx,ny))return;
+
+ game.player.x=Math.max(45,Math.min(WORLD_W-45,nx));
+ game.player.y=Math.max(70,Math.min(WORLD_H-70,ny));
+
+ updatePlayer();
+ updateCamera();
+ checkInteractions();
+ updateEnemyMovement();
+ maybeSpawn();
+}
+
+function isWalkable(x,y){
+ if(game.area==='village')return true;
+
+ /* water collision */
+ const waterZones=[
+  {x:250,y:300,w:520,h:340},
+  {x:2350,y:1250,w:500,h:420}
+ ];
+
+ for(const z of waterZones){
+  if(x>z.x&&x<z.x+z.w&&y>z.y&&y<z.y+z.h)return false;
+ }
+
+ /* cliffs */
+ const cliffs=[
+  {x:600,y:620,w:430,h:230},
+  {x:1650,y:300,w:480,h:260},
+  {x:1000,y:1570,w:500,h:250}
+ ];
+
+ for(const z of cliffs){
+  if(x>z.x&&x<z.x+z.w&&y>z.y&&y<z.y+z.h)return false;
+ }
+
+ return true;
+}
+
+function checkInteractions(){
+ if(game.area==='village'){
+  if(game.player.x>2850){
+   enterBedPlains();
+  }
+ }
+
+ if(game.area==='plains'){
+  if(game.player.x<120&&game.player.y>800&&game.player.y<1100){
+   enterVillage();
+  }
+
+  const bridgeDistance=Math.hypot(
+   game.player.x-1380,
+   game.player.y-875
+  );
+
+  if(bridgeDistance<120&&!game.unlocked.Axol){
+   modal(
+    'Axol Bridge',
+    'A broken bridge blocks the route. Something seems to be happening nearby.',
+    ()=>{}
+   );
+  }
+ }
+}
+
+function interact(){
+ const entities=document.querySelectorAll('#worldCanvas .entity');
+ let closest=null;
+ let dist=999;
+
+ entities.forEach(e=>{
+  const ex=parseFloat(e.style.left)+25;
+  const ey=parseFloat(e.style.top)+25;
+  const d=Math.hypot(ex-game.player.x,ey-game.player.y);
+
+  if(d<170&&d<dist){
+   closest=e;
+   dist=d;
+  }
+ });
+
+ if(!closest){
+  modal('Nothing nearby','Move closer to an object, NPC, chest, cage, or landmark.');
+  return;
+ }
+
+ const id=closest.dataset.id;
+
+ if(id==='cage')interactCage();
+ else if(id==='villager')villagerTalk();
+ else if(id==='gate')enterBedPlains();
+ else if(id==='villageGate')enterVillage();
+ else if(id)openChest(id);
+}
+
+/* =========================
+   AREA TRANSITIONS
+========================= */
+
+function enterBedPlains(){
+ if(game.area==='plains')return;
+
+ game.area='plains';
+ game.player.x=160;
+ game.player.y=950;
+ game.checkpoint='bedPlains';
+
+ renderWorld();
+ updateHUD();
+ syncStory();
+}
+
+function enterVillage(){
+ if(game.area==='village')return;
+
+ game.area='village';
+ game.player.x=2800;
+ game.player.y=900;
+
+ /* Enemies are cleared during major-area transition. */
+ document.querySelectorAll('.enemyWorld').forEach(e=>e.remove());
+
+ renderWorld();
+ updateHUD();
+ syncStory();
+}
+
+/* =========================
+   ENEMY SPAWNING
+========================= */
+
+const enemyTypes=[
+ {
+  name:'Grassling',
+  sprite:'🌱',
+  min:1,
+  max:5,
+  hp:12,
+  attack:2,
+  defence:0,
+  speed:10,
+  rarity:'Common'
+ },
+ {
+  name:'Pidgeoning',
+  sprite:'🐦',
+  min:1,
+  max:8,
+  hp:16,
+  attack:3,
+  defence:1,
+  speed:18,
+  rarity:'Uncommon'
+ },
+ {
+  name:'Rats',
+  sprite:'🐀',
+  min:1,
+  max:10,
+  hp:10,
+  attack:2,
+  defence:0,
+  speed:17,
+  rarity:'Common'
+ },
+ {
+  name:'Eddie Minion',
+  sprite:'🦊',
+  min:2,
+  max:8,
+  hp:25,
+  attack:5,
+  defence:1,
+  speed:20,
+  rarity:'Rare'
+ },
+ {
+  name:'Armored Eddie Minion',
+  sprite:'🛡️🦊',
+  min:2,
+  max:13,
+  hp:35,
+  attack:5,
+  defence:8,
+  speed:12,
+  rarity:'Common'
+ }
+];
+
+function randomEnemyLevel(type){
+ return type.min+Math.floor(Math.random()*(type.max-type.min+1));
+}
+
+function scaleEnemy(type,level){
+ return {
+  name:type.name,
+  sprite:type.sprite,
+  level,
+  hp:type.hp,
+  maxHp:type.hp,
+  attack:type.attack,
+  defence:type.defence,
+  speed:type.speed,
+  rarity:type.rarity
+ };
+}
+
+function spawnEnemyOutsideSafeZone(){
+ if(game.area!=='plains')return;
+
+ const viewport=document.getElementById('worldViewport');
+ const vw=viewport.clientWidth;
+ const vh=viewport.clientHeight;
+
+ const minDistance=520;
+
+ for(let tries=0;tries<50;tries++){
+  const x=100+Math.random()*(WORLD_W-200);
+  const y=100+Math.random()*(WORLD_H-200);
+
+  const distance=Math.hypot(
+   x-game.player.x,
+   y-game.player.y
+  );
+
+  if(distance<minDistance)continue;
+  if(!isWalkable(x,y))continue;
+
+  const level=Math.max(
+   1,
+   Math.min(13,1+Math.floor(
+    Math.hypot(x-game.player.x,y-game.player.y)/500
+   ))
+  );
+
+  let pool=enemyTypes.filter(e=>level>=e.min&&level<=e.max);
+
+  if(!pool.length)pool=enemyTypes.filter(e=>e.min<=5);
+
+  const type=pool[Math.floor(Math.random()*pool.length)];
+  const enemy=scaleEnemy(type,randomEnemyLevel(type));
+
+  const d=document.createElement('div');
+  d.className='entity enemyWorld';
+  d.dataset.enemy=JSON.stringify(enemy);
+  d.style.left=x+'px';
+  d.style.top=y+'px';
+
+  d.innerHTML=
+   `<div class="sprite">${enemy.sprite}</div>
+    <div class="name">${enemy.name} Lv.${enemy.level}</div>`;
+
+  d.onclick=()=>startEnemyBattle(d);
+
+  document.getElementById('worldCanvas').appendChild(d);
+  return;
+ }
+}
+
+function maybeSpawn(){
+ if(game.area!=='plains')return;
+
+ enemySpawnTimer++;
+
+ if(enemySpawnTimer%7===0){
+  const count=document.querySelectorAll('.enemyWorld').length;
+
+  if(count<10){
+   spawnEnemyOutsideSafeZone();
+  }
+ }
+}
+
+function updateEnemyMovement(){
+ if(game.area!=='plains')return;
+
+ document.querySelectorAll('.enemyWorld').forEach(e=>{
+  let enemy;
+
+  try{enemy=JSON.parse(e.dataset.enemy)}
+  catch(err){return}
+
+  let x=parseFloat(e.style.left);
+  let y=parseFloat(e.style.top);
+
+  const dx=game.player.x-x;
+  const dy=game.player.y-y;
+  const d=Math.hypot(dx,dy);
+
+  /*
+   Enemies wander but do not immediately charge the player.
+   They also cannot enter the protected spawn buffer.
+  */
+  if(d>650){
+   const angle=Math.random()*Math.PI*2;
+   x+=Math.cos(angle)*1.5;
+   y+=Math.sin(angle)*1.5;
+  }
+
+  x=Math.max(50,Math.min(WORLD_W-50,x));
+  y=Math.max(80,Math.min(WORLD_H-80,y));
+
+  if(isWalkable(x,y)){
+   e.style.left=x+'px';
+   e.style.top=y+'px';
+  }
+
+  /*
+   Touching an enemy starts battle.
+  */
+  const nowDistance=Math.hypot(
+   game.player.x-x,
+   game.player.y-y
+  );
+
+  if(nowDistance<62){
+   startEnemyBattle(e);
+  }
+ }
+}
+
+/* =========================
+   BATTLE
+========================= */
+
+function startEnemyBattle(element){
+ if(battle)return;
+
+ let enemy;
+
+ try{
+  enemy=JSON.parse(element.dataset.enemy);
+ }catch(e){
+  enemy={
+   name:'Eddie Minion',
+   sprite:'🦊',
+   level:1,
+   hp:28,
+   maxHp:28,
+   attack:5,
+   defence:1
+  };
+ }
+
+ element.remove();
+
+ battle={
+  type:'wild',
+  enemy,
+  playerHP:game.player.hp,
+  playerEnergy:game.player.energy,
+  turn:'player',
+  finished:false
+ };
+
+ document.getElementById('enemyName').textContent=enemy.name;
+ document.getElementById('enemySprite').textContent=enemy.sprite;
+ document.getElementById('enemyLevel').textContent=enemy.level;
+
+ document.getElementById('tutorialHint').classList.add('hidden');
+
+ showScreen('battle');
+ updateBattle();
+
+ document.getElementById('battleMessage').textContent=
+  `${enemy.name} Lv.${enemy.level} appeared!`;
+}
+
+function updateBattle(){
+ if(!battle)return;
+
+ const enemy=battle.enemy;
+
+ const hpPercent=Math.max(
+  0,
+  Math.min(100,battle.playerHP/game.player.maxHp*100)
+ );
+
+ const enemyPercent=Math.max(
+  0,
+  Math.min(100,enemy.hp/enemy.maxHp*100)
+ );
+
+ document.getElementById('bHechieHP').style.width=hpPercent+'%';
+ document.getElementById('bEnemyHP').style.width=enemyPercent+'%';
+
+ document.getElementById('battleMessage').textContent=
+  battle.turn==='player'?'Your turn!':'Enemy turn...';
+}
+
+function battleAttack(){
+ if(!battle||battle.finished||battle.turn!=='player')return;
+
+ const enemy=battle.enemy;
+
+ let damage=Math.max(
+  1,
+  game.player.attack-enemy.defence
+ );
+
+ damage=Math.round(damage);
+
+ enemy.hp-=damage;
+
+ showDamage(damage,false);
+
+ if(enemy.hp<=0){
+  winBattle();
+  return;
+ }
+
+ battle.turn='enemy';
+ updateBattle();
+
+ setTimeout(enemyTurn,500);
+}
+
+function battleAbility(){
+ if(!battle||battle.finished||battle.turn!=='player')return;
+
+ if(battle.playerEnergy<20){
+  document.getElementById('battleMessage').textContent='Not enough Energy.';
+  return;
+ }
+
+ battle.playerEnergy-=20;
+
+ const damage=Math.max(
+  1,
+  Math.round(game.player.attack*1.5-battle.enemy.defence)
+ );
+
+ battle.enemy.hp-=damage;
+
+ showDamage(damage,false);
+
+ if(battle.enemy.hp<=0){
+  winBattle();
+  return;
+ }
+
+ battle.turn='enemy';
+ updateBattle();
+
+ setTimeout(enemyTurn,500);
+}
+
+function battleItem(){
+ if(!battle||battle.finished||battle.turn!=='player')return;
+
+ if((game.inventory['Health Potion']||0)<=0){
+  document.getElementById('battleMessage').textContent=
+   'You have no Health Potions.';
+  return;
+ }
+
+ game.inventory['Health Potion']--;
+
+ battle.playerHP=Math.min(
+  game.player.maxHp,
+  battle.playerHP+50
+ );
+
+ battle.turn='enemy';
+ updateBattle();
+
+ setTimeout(enemyTurn,500);
+}
+
+function tryRun(){
+ if(!battle||battle.finished)return;
+
+ if(Math.random()<0.7){
+  document.getElementById('battleMessage').textContent='You escaped!';
+  setTimeout(endBattle,500);
+ }else{
+  document.getElementById('battleMessage').textContent='You could not escape!';
+  battle.turn='enemy';
+  updateBattle();
+  setTimeout(enemyTurn,500);
+ }
+}
+
+function enemyTurn(){
+ if(!battle||battle.finished)return;
+
+ const enemy=battle.enemy;
+
+ let damage=Math.max(
+  1,
+  Math.round(enemy.attack-game.player.defence)
+ );
+
+ battle.playerHP-=damage;
+ battle.playerHP=Math.max(0,battle.playerHP);
+
+ showDamage(damage,true);
+
+ if(battle.playerHP<=0){
+  loseBattle();
+  return;
+ }
+
+ battle.turn='player';
+ updateBattle();
+}
+
+function winBattle(){
+ battle.finished=true;
+
+ const enemy=battle.enemy;
+ const exp=Math.max(10,enemy.level*15);
+ const coins=10+Math.floor(Math.random()*20);
+
+ game.coins+=coins;
+ gainXP(exp);
+
+ game.player.hp=Math.min(
+  game.player.maxHp,
+  battle.playerHP
+ );
+
+ game.player.energy=Math.min(
+  game.player.maxEnergy,
+  battle.playerEnergy
+ );
+
+ syncStory();
+ updateHUD();
+
+ document.getElementById('battleMessage').textContent=
+  `Victory! +${exp} EXP • +${coins} DD-coins`;
+
+ setTimeout(endBattle,1200);
+}
+
+function loseBattle(){
+ battle.finished=true;
+
+ game.player.hp=game.player.maxHp;
+ game.player.energy=game.player.maxEnergy;
+
+ document.getElementById('battleMessage').textContent=
+  'Hechie was knocked out. Returning to the checkpoint...';
+
+ setTimeout(()=>{
+  game.player.x=game.checkpoint==='bedPlains'?160:500;
+  game.player.y=game.checkpoint==='bedPlains'?950:1000;
+
+  syncStory();
+  endBattle();
+ },1300);
+}
+
+function endBattle(){
+ battle=null;
+ renderWorld();
+ updateHUD();
+ showScreen('gameWorld');
+}
+
+function showDamage(value,enemyHit){
+ const d=document.createElement('div');
+ d.className='damage';
+ d.textContent='-'+value;
+
+ d.style.left='50%';
+ d.style.top=enemyHit?'36%':'58%';
+
+ document.body.appendChild(d);
+
+ setTimeout(()=>d.remove(),1000);
+}
+
+/* =========================
+   XP / LEVELING
+========================= */
+
+function gainXP(amount){
+ game.player.xp+=amount;
+
+ while(
+  game.player.level<99 &&
+  game.player.xp>=getNextXP()
+ ){
+  game.player.xp-=getNextXP();
+  game.player.level++;
+
+  game.player.maxHp+=5;
+  game.player.maxEnergy+=5;
+  game.player.attack+=1;
+  game.player.defence+=1;
+
+  game.player.hp=game.player.maxHp;
+  game.player.energy=game.player.maxEnergy;
+
+  modal(
+   'LEVEL UP!',
+   `Hechie reached <b>Level ${game.player.level}</b>!<br><br>
+    ❤️ Max Health increased<br>
+    ⚡ Max Energy increased<br>
+    ⚔️ Attack increased<br>
+    🛡️ Defence increased`
+  );
+ }
+}
+
+function getNextXP(){
+ if(game.player.level>=99)return Infinity;
+
+ return XP_TABLE[game.player.level]||
+  Math.round(
+   XP_TABLE[XP_TABLE.length-1]*
+   Math.pow(1.12,game.player.level-29)
+  );
+}
+
+/* =========================
+   INVENTORY
+========================= */
+
+function addItem(name,count=1){
+ game.inventory[name]=(game.inventory[name]||0)+count;
+}
+
+function openInventory(){
+ let text='<h2>🎒 INVENTORY</h2>';
+
+ Object.entries(game.inventory).forEach(([name,count])=>{
+  text+=`
+   <div class="menuRow">
+    <span>${name}</span>
+    <b>×${count}</b>
+   </div>
+  `;
+ });
+
+ modal('Inventory','',()=>{},null,text);
+}
+
+/* =========================
+   CHESTS
+========================= */
+
+function openChest(id){
+ if(game.chests[id]){
+  modal('Chest Empty','You already collected this chest.');
+  return;
+ }
+
+ game.chests[id]=true;
+ game.coins+=50;
+ addItem('Health Potion',1);
+
+ modal(
+  'Chest Opened!',
+  'You found <b>50 DD-coins</b> and <b>1 Health Potion</b>.'
+ );
+
+ syncStory();
+ updateHUD();
+}
+
+/* =========================
+   CAGE / VILLAGER
+========================= */
+
+function interactCage(){
+ if(game.village.rescuedVillager){
+  villagerTalk();
+  return;
+ }
+
+ modal(
+  'Caged Softoy',
+  'A Villager Softoy is trapped here. A Level 1 Eddie Minion is guarding the cage.',
+  ()=>startTutorialBattle()
+ );
+}
+
+function villagerTalk(){
+ if(!game.village.questGiven){
+  game.village.questGiven=true;
+  game.quests.active='Find the missing Softoy ingredients';
+  game.tutorialDone=true;
+
+  modal(
+   'First Quest',
+   'The Villager asks you to explore Bed Plains and search for useful ingredients.',
+   ()=>{
+    updateHUD();
+    syncStory();
+   }
+  );
+ }else{
+  modal(
+   'Villager',
+   'Thank you for helping the Softoys. More quests will become available as the village grows.'
+  );
+ }
+}
+
+/* =========================
+   MANAGE SQUAD
+========================= */
+
+function openManage(){
+ renderManage('squad');
+ showScreen('manage');
+}
+
+function closeManage(){
+ showScreen('gameWorld');
+}
+
+function renderManage(tab){
+ const c=document.getElementById('manageContent');
+
+ if(tab==='squad'){
+  c.innerHTML=`
+   <h2>👥 SQUAD</h2>
+   <p>Battle Softoys currently in your roster.</p>
+   <div class="squadGrid">
+    ${game.roster.map((s,i)=>`
+     <div class="slot">
+      ${s||'Empty Slot '+(i+1)}
+     </div>
+    `).join('')}
+   </div>
+  `;
+ }
+
+ if(tab==='items'){
+  c.innerHTML=`
+   <h2>🎒 ITEMS</h2>
+   ${Object.entries(game.inventory).map(([n,v])=>`
+    <div class="menuRow"><b>${n}</b><span>×${v}</span></div>
+   `).join('')}
+  `;
+ }
+
+ if(tab==='quests'){
+  c.innerHTML=`
+   <h2>📜 QUESTS</h2>
+   <div class="menuCard">
+    ${game.quests.active||'No active quest'}
+   </div>
+  `;
+ }
+
+ if(tab==='abilities'){
+  c.innerHTML=`
+   <h2>✨ ABILITIES</h2>
+   <div class="menuCard">
+    <b>Hechie</b>
+    <p>Basic ability test available during battle.</p>
+   </div>
+  `;
+ }
+
+ if(tab==='equipment'){
+  c.innerHTML=`
+   <h2>🛡️ EQUIPMENT</h2>
+   ${game.roster.filter(Boolean).map(s=>`
+    <div class="menuRow">
+     <b>${s}</b>
+     <span>Equipment coming later</span>
+    </div>
+   `).join('')}
+  `;
+ }
+}
+
+function renderWholeSquad(){
+ const c=document.getElementById('manageContent');
+
+ c.innerHTML=`
+  <h2>↔️ MANAGE WHOLE SQUAD</h2>
+  <div class="menuCard">
+   <h3>FRONTLINE</h3>
+   <p>Recommended for Tanks and Fighters.</p>
+  </div>
+  <div class="menuCard">
+   <h3>MIDDLELINE</h3>
+   <p>Suitable for Fighters, Archers and Healers.</p>
+  </div>
+  <div class="menuCard">
+   <h3>BACKLINE</h3>
+   <p>Recommended for Archers and Healers.</p>
+  </div>
+  <div class="menuCard">
+   <h3>📜 TEAM SCROLLS</h3>
+   <p>Team Scrolls can add attributes to the whole squad.</p>
+  </div>
+ `;
+}
+
+/* =========================
+   SETTINGS
+========================= */
+
+function openSettings(){
+ document.getElementById('musicBtn').textContent=
+  game.music?'🔊 ON':'🔇 OFF';
+
+ showScreen('settings');
+}
+
+function closeSettings(){
+ showScreen('gameWorld');
+}
+
+function toggleMusic(){
+ game.music=!game.music;
+
+ document.getElementById('musicBtn').textContent=
+  game.music?'🔊 ON':'🔇 OFF';
+
+ syncStory();
+}
+
+function manualSave(){
+ syncStory();
+ modal('Game Saved','Your current progress has been saved.');
+}
+
+/* =========================
+   MAP
+========================= */
+
+function showMap(){
+ document.getElementById('mapOverlay').classList.add('active');
+}
+
+function closeMap(){
+ document.getElementById('mapOverlay').classList.remove('active');
+}
+
+/* =========================
+   HUD
+========================= */
+
+function updateHUD(){
+ if(!game)return;
+
+ document.getElementById('hpHud').textContent=
+  `❤️ ${game.player.hp}/${game.player.maxHp}`;
+
+ document.getElementById('xpHud').textContent=
+  `⭐ Lv. ${game.player.level} • ${game.player.xp}/${getNextXP()} EXP`;
+
+ document.getElementById('coinHud').textContent=
+  `🪙 ${game.coins} DD`;
+
+ document.getElementById('questHud').textContent=
+  game.quests.active
+  ?`📜 ${game.quests.active}`
+  :'📜 No active quest';
+}
+
+/* =========================
+   GAME LOOP
+========================= */
+
+let lastLoop=0;
+
+function startGameLoop(){
+ requestAnimationFrame(gameLoop);
+}
+
+function gameLoop(time){
+ const delta=time-lastLoop;
+ lastLoop=time;
+
+ if(game&&document.getElementById('gameWorld').classList.contains('active')){
+  if(joystickActive){
+   if(Math.abs(joystickX)>0.1||Math.abs(joystickY)>0.1){
+    movePlayer(
+     joystickX,
+     joystickY
+    );
+   }
+  }
+
+  if(keys.ArrowUp)movePlayer(0,-1);
+  if(keys.ArrowDown)movePlayer(0,1);
+  if(keys.ArrowLeft)movePlayer(-1,0);
+  if(keys.ArrowRight)movePlayer(1,0);
+
+  updateCamera();
+  updateEnemyMovement();
+ }
+
+ requestAnimationFrame(gameLoop);
+}
+
+/* =========================
+   KEYBOARD
+========================= */
+
+window.addEventListener('keydown',e=>{
+ keys[e.key]=true;
+});
+
+window.addEventListener('keyup',e=>{
+ keys[e.key]=false;
+});
+
+/* =========================
+   JOYSTICK
+========================= */
+
+const joystick=document.getElementById('joystick');
+const knob=document.getElementById('joyKnob');
+
+function handleJoy(clientX,clientY){
+ const r=joystick.getBoundingClientRect();
+
+ const cx=r.left+r.width/2;
+ const cy=r.top+r.height/2;
+
+ let dx=clientX-cx;
+ let dy=clientY-cy;
+
+ const max=43;
+ const distance=Math.hypot(dx,dy);
+
+ if(distance>max){
+  dx=dx/distance*max;
+  dy=dy/distance*max;
+ }
+
+ joystickX=dx/max;
+ joystickY=dy/max;
+
+ knob.style.transform=
+  `translate(${dx}px,${dy}px)`;
+}
+
+function stopJoy(){
+ joystickActive=false;
+ joystickX=0;
+ joystickY=0;
+ knob.style.transform='translate(0,0)';
+}
+
+joystick.addEventListener('pointerdown',e=>{
+ joystickActive=true;
+ joystick.setPointerCapture(e.pointerId);
+ handleJoy(e.clientX,e.clientY);
+});
+
+joystick.addEventListener('pointermove',e=>{
+ if(joystickActive)handleJoy(e.clientX,e.clientY);
+});
+
+joystick.addEventListener('pointerup',stopJoy);
+joystick.addEventListener('pointercancel',stopJoy);
+
+/* =========================
+   INITIAL LOAD
+========================= */
+
+loadStories();
+
+if(!stories.length){
+ game=defaults();
+}else{
+ game=structuredClone(stories[0]);
+}
+
+updateHUD();
+</script>
+
+</body>
+</html>
