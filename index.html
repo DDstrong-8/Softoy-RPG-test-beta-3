@@ -1,0 +1,3590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#111827">
+<title>Softoy RPG — Test Build</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+}
+
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#101827;
+    font-family:Arial,sans-serif;
+}
+
+button{
+    font:inherit;
+    cursor:pointer;
+}
+
+#startScreen{
+    position:fixed;
+    inset:0;
+    z-index:1000;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:
+        radial-gradient(circle at center,#263b5b 0%,#17243a 45%,#0b1220 100%);
+    color:white;
+}
+
+.logo{
+    font-size:48px;
+    font-weight:900;
+    letter-spacing:4px;
+    margin-bottom:12px;
+    text-shadow:0 5px 15px #000;
+}
+
+.subtitle{
+    opacity:.75;
+    margin-bottom:45px;
+}
+
+.startButton{
+    width:260px;
+    padding:18px;
+    margin:8px;
+    border:0;
+    border-radius:16px;
+    background:#ffffff;
+    color:#162033;
+    font-size:20px;
+    font-weight:bold;
+    box-shadow:0 8px 20px #0008;
+}
+
+.startButton:active{
+    transform:scale(.97);
+}
+
+#game{
+    display:none;
+    position:fixed;
+    inset:0;
+    overflow:hidden;
+    background:#87b95d;
+}
+
+#world{
+    position:absolute;
+    left:0;
+    top:0;
+    width:5000px;
+    height:3600px;
+    transform-origin:0 0;
+    background:#8fbd63;
+}
+
+/* Ground */
+.ground{
+    position:absolute;
+    border-radius:45% 55% 50% 40% / 55% 40% 60% 45%;
+    background:#7fb257;
+}
+
+.ground.dark{
+    background:#6da04c;
+}
+
+.ground.light{
+    background:#9bc96b;
+}
+
+/* Unreachable elevated terrain */
+.cliff{
+    position:absolute;
+    background:
+        linear-gradient(#65744d,#566440);
+    border:8px solid #48563a;
+    box-shadow:
+        0 12px 0 #3d4931,
+        inset 0 8px 0 #78865d;
+    z-index:5;
+}
+
+.cliff::after{
+    content:"";
+    position:absolute;
+    inset:8px;
+    border:3px dashed #89966c;
+    opacity:.45;
+}
+
+/* Paths */
+.path{
+    position:absolute;
+    background:#c9a875;
+    border-radius:50px;
+    box-shadow:inset 0 5px 0 #d7ba8b;
+}
+
+/* Water */
+.water{
+    position:absolute;
+    background:#55a9d8;
+    border:7px solid #3888b6;
+    border-radius:48% 52% 45% 55% / 50% 45% 55% 50%;
+    overflow:hidden;
+}
+
+.water::after{
+    content:"";
+    position:absolute;
+    inset:15px;
+    border-top:4px solid #8bd2ee;
+    border-radius:50%;
+    opacity:.5;
+}
+
+/* Bridge */
+.bridge{
+    position:absolute;
+    background:#9a653b;
+    border:7px solid #6d4328;
+    z-index:12;
+}
+
+.bridge::before{
+    content:"";
+    position:absolute;
+    inset:12px 0;
+    background:repeating-linear-gradient(
+        90deg,
+        transparent 0 30px,
+        #5e3925 30px 36px
+    );
+}
+
+/* Decorations */
+.tree{
+    position:absolute;
+    width:70px;
+    height:95px;
+    z-index:20;
+}
+
+.tree .trunk{
+    position:absolute;
+    bottom:0;
+    left:27px;
+    width:17px;
+    height:45px;
+    background:#76502f;
+    border-radius:7px;
+}
+
+.tree .crown{
+    position:absolute;
+    width:65px;
+    height:65px;
+    top:0;
+    left:2px;
+    border-radius:50%;
+    background:#387842;
+    box-shadow:
+        20px -10px 0 #43884b,
+        -18px 7px 0 #316b3a,
+        10px 18px 0 #4b934f;
+}
+
+.tree.small{
+    transform:scale(.75);
+}
+
+.bush{
+    position:absolute;
+    width:62px;
+    height:42px;
+    border-radius:50%;
+    background:#3e873f;
+    z-index:18;
+    box-shadow:
+        15px -5px 0 #4b9446,
+        -15px 4px 0 #327336;
+}
+
+.berry{
+    position:absolute;
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#e84b77;
+    z-index:22;
+}
+
+.rock{
+    position:absolute;
+    width:48px;
+    height:35px;
+    background:#777c78;
+    border-radius:45% 55% 40% 60%;
+    z-index:18;
+    box-shadow:inset 8px 5px 0 #989d98;
+}
+
+.flower{
+    position:absolute;
+    font-size:22px;
+    z-index:18;
+}
+
+/* Area labels */
+.areaLabel{
+    position:absolute;
+    color:#fff;
+    font-size:28px;
+    font-weight:900;
+    text-shadow:0 3px 8px #0009;
+    z-index:50;
+}
+
+/* Transition indicators */
+.entrance{
+    position:absolute;
+    z-index:60;
+    padding:12px 18px;
+    border-radius:14px;
+    background:#1c2637dd;
+    color:white;
+    font-weight:bold;
+    border:2px solid #ffffff66;
+}
+
+#camera{
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+}
+
+/* Player */
+#player{
+    position:absolute;
+    width:52px;
+    height:52px;
+    z-index:100;
+    transform:translate(-50%,-50%);
+}
+
+.hechieBody{
+    width:44px;
+    height:44px;
+    position:absolute;
+    left:4px;
+    top:4px;
+    border-radius:50%;
+    background:#d7a75c;
+    border:4px solid #805e32;
+    box-shadow:0 4px 0 #604722;
+}
+
+.hechieBody::before{
+    content:"";
+    position:absolute;
+    width:9px;
+    height:9px;
+    background:#171717;
+    border-radius:50%;
+    left:9px;
+    top:10px;
+    box-shadow:17px 0 0 #171717;
+}
+
+.weapon{
+    position:absolute;
+    width:65px;
+    height:8px;
+    background:#c9ced1;
+    border-radius:3px;
+    right:-39px;
+    top:19px;
+    transform:rotate(-25deg);
+    transform-origin:left center;
+    z-index:3;
+}
+
+.weapon::after{
+    content:"";
+    position:absolute;
+    right:-18px;
+    top:-9px;
+    width:30px;
+    height:26px;
+    background:#c9ced1;
+    clip-path:polygon(0 25%,100% 0,72% 100%,0 75%);
+}
+
+.weapon::before{
+    content:"";
+    position:absolute;
+    left:5px;
+    top:-8px;
+    width:7px;
+    height:24px;
+    background:#9b48c9;
+    clip-path:polygon(50% 0,100% 100%,0 100%);
+    box-shadow:15px 0 #9b48c9,30px 0 #9b48c9;
+}
+
+/* Enemies */
+.enemy{
+    position:absolute;
+    width:50px;
+    height:50px;
+    z-index:90;
+    transform:translate(-50%,-50%);
+}
+
+.enemyBody{
+    position:absolute;
+    inset:6px;
+    border-radius:45%;
+    border:3px solid #26351d;
+}
+
+.enemy.grassling .enemyBody{
+    background:#68b94e;
+}
+
+.enemy.rat .enemyBody{
+    background:#77706a;
+}
+
+.enemy.pidgeoning .enemyBody{
+    background:#bcbcbc;
+    border-radius:50% 50% 40% 40%;
+}
+
+.enemy.minion .enemyBody{
+    background:#a95d45;
+    border-color:#512e24;
+}
+
+.enemy.armored .enemyBody{
+    background:#6d737a;
+    border-color:#30353a;
+}
+
+.enemy.grudger .enemyBody{
+    background:#23552b;
+    border-color:#17371c;
+}
+
+.enemy.mimic .enemyBody{
+    background:#a46b35;
+    border-radius:8px;
+}
+
+.enemyLabel{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    top:-27px;
+    white-space:nowrap;
+    font-size:11px;
+    font-weight:bold;
+    color:white;
+    background:#182033dd;
+    padding:3px 6px;
+    border-radius:5px;
+}
+
+/* HUD */
+#hud{
+    position:fixed;
+    left:14px;
+    top:14px;
+    z-index:500;
+    width:260px;
+    color:white;
+}
+
+.playerCard{
+    padding:12px;
+    border-radius:14px;
+    background:#111827dd;
+    border:1px solid #ffffff22;
+    box-shadow:0 5px 18px #0006;
+}
+
+.statTitle{
+    font-weight:bold;
+    margin-bottom:5px;
+}
+
+.bar{
+    height:13px;
+    border-radius:20px;
+    background:#252d3c;
+    overflow:hidden;
+    margin-bottom:7px;
+}
+
+.barFill{
+    height:100%;
+    width:100%;
+    transition:width .25s;
+}
+
+.hpFill{
+    background:#e85b61;
+}
+
+.energyFill{
+    background:#55aeea;
+}
+
+.expFill{
+    background:#d9b84c;
+}
+
+.smallText{
+    font-size:12px;
+    opacity:.85;
+}
+
+#menuButton{
+    position:fixed;
+    right:15px;
+    top:15px;
+    z-index:600;
+    width:52px;
+    height:52px;
+    border:0;
+    border-radius:15px;
+    background:#111827dd;
+    color:white;
+    font-size:24px;
+}
+
+/* Joystick */
+#joystick{
+    position:fixed;
+    bottom:25px;
+    left:25px;
+    width:145px;
+    height:145px;
+    border-radius:50%;
+    background:#11182766;
+    border:3px solid #ffffff55;
+    z-index:600;
+    touch-action:none;
+}
+
+#stick{
+    position:absolute;
+    width:65px;
+    height:65px;
+    border-radius:50%;
+    left:40px;
+    top:40px;
+    background:#ffffffaa;
+    border:3px solid #ffffffcc;
+}
+
+/* Menu */
+#menu{
+    display:none;
+    position:fixed;
+    right:15px;
+    top:78px;
+    width:250px;
+    padding:15px;
+    background:#111827f5;
+    border:1px solid #ffffff22;
+    border-radius:16px;
+    color:white;
+    z-index:700;
+}
+
+.menuButton{
+    width:100%;
+    padding:12px;
+    margin:5px 0;
+    border:0;
+    border-radius:10px;
+    background:#263247;
+    color:white;
+    font-weight:bold;
+}
+
+/* Battle */
+#battle{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:900;
+    background:
+        radial-gradient(circle at 50% 25%,#526f52,#253c2c 60%,#101820);
+    color:white;
+}
+
+#battleGround{
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+}
+
+.battlePlatform{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:25%;
+    width:80%;
+    height:20%;
+    border-radius:50%;
+    background:#567448;
+    border:8px solid #34492d;
+}
+
+.battleEnemy{
+    position:absolute;
+    left:68%;
+    top:35%;
+    transform:translate(-50%,-50%);
+    width:95px;
+    height:95px;
+}
+
+.battleEnemy .enemyBody{
+    inset:0;
+}
+
+#battlePlayer{
+    position:absolute;
+    left:25%;
+    bottom:29%;
+    width:100px;
+    height:100px;
+    transform:translate(-50%,-50%) scale(1.5);
+}
+
+#battleInfo{
+    position:absolute;
+    top:18px;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(600px,90%);
+    background:#101827dd;
+    padding:12px;
+    border-radius:14px;
+    text-align:center;
+}
+
+#battleMessage{
+    min-height:45px;
+    font-weight:bold;
+}
+
+#targetPanel{
+    position:absolute;
+    top:115px;
+    right:20px;
+    width:210px;
+}
+
+.targetButton{
+    width:100%;
+    margin:4px;
+    padding:9px;
+    border:2px solid transparent;
+    border-radius:9px;
+    background:#182234dd;
+    color:white;
+}
+
+.targetButton.selected{
+    border-color:#f5d85b;
+}
+
+#battleActions{
+    position:absolute;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(700px,95%);
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+}
+
+.attackButton{
+    min-height:55px;
+    border:0;
+    border-radius:12px;
+    background:#27354c;
+    color:white;
+    font-weight:bold;
+}
+
+.attackButton:active{
+    transform:scale(.97);
+}
+
+.attackButton:disabled{
+    opacity:.35;
+}
+
+#battleEnd{
+    display:none;
+    position:absolute;
+    inset:0;
+    background:#07101dcc;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    z-index:20;
+}
+
+.endCard{
+    width:min(400px,90%);
+    background:#182236;
+    border-radius:18px;
+    padding:25px;
+    text-align:center;
+}
+
+.endButton{
+    margin-top:15px;
+    width:100%;
+    padding:14px;
+    border:0;
+    border-radius:12px;
+    background:white;
+    color:#172033;
+    font-weight:bold;
+}
+
+/* Floating damage */
+.floatText{
+    position:absolute;
+    z-index:999;
+    color:#fff;
+    font-size:22px;
+    font-weight:900;
+    text-shadow:0 3px 5px #000;
+    pointer-events:none;
+    animation:floatUp .8s forwards;
+}
+
+@keyframes floatUp{
+    from{
+        opacity:1;
+        transform:translate(-50%,0);
+    }
+    to{
+        opacity:0;
+        transform:translate(-50%,-65px);
+    }
+}
+
+/* EXP popup */
+#levelPopup{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:950;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+}
+
+.levelCard{
+    padding:25px 40px;
+    border-radius:20px;
+    background:#151f31ee;
+    color:white;
+    text-align:center;
+    border:2px solid #e4c94c;
+    box-shadow:0 0 30px #e4c94c55;
+}
+
+@media(max-width:700px){
+    .logo{
+        font-size:38px;
+    }
+
+    #hud{
+        width:210px;
+        transform:scale(.9);
+        transform-origin:top left;
+    }
+
+    #battleActions{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    #targetPanel{
+        top:100px;
+        right:10px;
+        width:165px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- =========================================================
+     START SCREEN
+========================================================= -->
+
+<div id="startScreen">
+
+    <div class="logo">SOFTOY RPG</div>
+    <div class="subtitle">Playable Test Build</div>
+
+    <button class="startButton" id="newStoryButton">
+        New Story
+    </button>
+
+    <button class="startButton" id="continueButton">
+        Continue Story
+    </button>
+
+    <div id="saveStatus" style="margin-top:15px;font-size:13px;opacity:.6;"></div>
+
+</div>
+
+
+<!-- =========================================================
+     GAME
+========================================================= -->
+
+<div id="game">
+
+    <div id="camera">
+        <div id="world">
+
+            <!-- Ground regions -->
+
+            <div class="ground"
+                 style="left:150px;top:200px;width:1800px;height:1250px;"></div>
+
+            <div class="ground dark"
+                 style="left:950px;top:1050px;width:1500px;height:1400px;"></div>
+
+            <div class="ground light"
+                 style="left:2100px;top:500px;width:1700px;height:1300px;"></div>
+
+            <div class="ground"
+                 style="left:3150px;top:1550px;width:1450px;height:1400px;"></div>
+
+            <!-- Organic paths -->
+
+            <div class="path"
+                 style="left:350px;top:700px;width:1150px;height:110px;transform:rotate(-7deg);"></div>
+
+            <div class="path"
+                 style="left:1200px;top:650px;width:120px;height:900px;transform:rotate(12deg);"></div>
+
+            <div class="path"
+                 style="left:1050px;top:1400px;width:1100px;height:125px;transform:rotate(-10deg);"></div>
+
+            <div class="path"
+                 style="left:1950px;top:1100px;width:1050px;height:120px;transform:rotate(17deg);"></div>
+
+            <div class="path"
+                 style="left:2750px;top:1200px;width:120px;height:950px;transform:rotate(-12deg);"></div>
+
+            <div class="path"
+                 style="left:2750px;top:2050px;width:1200px;height:130px;transform:rotate(8deg);"></div>
+
+            <!-- Water -->
+
+            <div class="water"
+                 style="left:1850px;top:200px;width:850px;height:450px;"></div>
+
+            <div class="water"
+                 style="left:3500px;top:850px;width:650px;height:550px;"></div>
+
+            <!-- Elevated unreachable cliffs -->
+
+            <div class="cliff"
+                 style="left:250px;top:50px;width:650px;height:190px;border-radius:40px;"></div>
+
+            <div class="cliff"
+                 style="left:3000px;top:300px;width:850px;height:220px;border-radius:45px;"></div>
+
+            <div class="cliff"
+                 style="left:4100px;top:1850px;width:600px;height:650px;border-radius:50px;"></div>
+
+            <!-- Bridge -->
+
+            <div class="bridge"
+                 id="axolBridge"
+                 style="left:1870px;top:650px;width:310px;height:90px;">
+            </div>
+
+            <!-- Area labels -->
+
+            <div class="areaLabel" style="left:400px;top:330px;">
+                BED PLAINS
+            </div>
+
+            <div class="areaLabel" style="left:2700px;top:600px;">
+                BED PLAINS — EAST
+            </div>
+
+            <!-- Lost Caves entrance -->
+
+            <div class="entrance"
+                 style="left:700px;top:1160px;">
+                🕳️ Lost Caves
+            </div>
+
+            <!-- Double jump entrance indicator -->
+
+            <div class="entrance"
+                 style="left:3520px;top:620px;">
+                ✦ Double Jump Entrance
+            </div>
+
+            <!-- Pillow Forest indicator -->
+
+            <div class="entrance"
+                 style="left:4300px;top:1200px;">
+                🌲 Pillow Forest
+            </div>
+
+            <!-- Decorations -->
+
+            <div id="decorations"></div>
+
+            <!-- Enemies -->
+
+            <div id="enemies"></div>
+
+            <!-- Player -->
+
+            <div id="player">
+                <div class="hechieBody"></div>
+                <div class="weapon"></div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- HUD -->
+
+    <div id="hud">
+
+        <div class="playerCard">
+
+            <div class="statTitle">
+                Hechie — Lv.<span id="levelText">1</span>
+            </div>
+
+            <div class="smallText">
+                HP <span id="hpText">100</span>/<span id="maxHpText">100</span>
+            </div>
+
+            <div class="bar">
+                <div id="hpBar" class="barFill hpFill"></div>
+            </div>
+
+            <div class="smallText">
+                Energy <span id="energyText">250</span>/<span id="maxEnergyText">400</span>
+            </div>
+
+            <div class="bar">
+                <div id="energyBar" class="barFill energyFill"></div>
+            </div>
+
+            <div class="smallText">
+                EXP <span id="expText">0</span>/<span id="nextExpText">100</span>
+            </div>
+
+            <div class="bar">
+                <div id="expBar" class="barFill expFill"></div>
+            </div>
+
+            <div class="smallText">
+                Attack: <span id="attackText">10</span>
+                &nbsp; Defense: <span id="defenseText">8</span>
+            </div>
+
+        </div>
+
+    </div>
+
+    <button id="menuButton">☰</button>
+
+    <div id="menu">
+
+        <button class="menuButton" id="resumeButton">
+            Resume
+        </button>
+
+        <button class="menuButton" id="saveButton">
+            Save
+        </button>
+
+        <button class="menuButton" id="resetButton">
+            Return to Title
+        </button>
+
+    </div>
+
+
+    <!-- Joystick -->
+
+    <div id="joystick">
+        <div id="stick"></div>
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     BATTLE
+========================================================= -->
+
+<div id="battle">
+
+    <div id="battleGround">
+
+        <div class="battlePlatform"></div>
+
+        <div id="battlePlayer">
+            <div class="hechieBody"></div>
+            <div class="weapon"></div>
+        </div>
+
+        <div id="battleEnemy" class="battleEnemy">
+            <div class="enemyBody"></div>
+        </div>
+
+    </div>
+
+    <div id="battleInfo">
+
+        <div id="battleEnemyName">
+            Enemy
+        </div>
+
+        <div id="battleEnemyStats">
+            Level 1
+        </div>
+
+        <div id="battleMessage">
+            Choose an action.
+        </div>
+
+    </div>
+
+    <div id="targetPanel"></div>
+
+    <div id="battleActions">
+
+        <button class="attackButton" id="basicAttack">
+            Basic Attack
+        </button>
+
+        <button class="attackButton" id="doubleSlash">
+            Double Slash
+            <br>
+            <small>25 Energy</small>
+        </button>
+
+        <button class="attackButton" id="poisonStab">
+            Poison Stab
+            <br>
+            <small>50 Energy</small>
+        </button>
+
+        <button class="attackButton" id="spikeBomb">
+            Spike Bomb
+            <br>
+            <small>100 Energy</small>
+        </button>
+
+        <button class="attackButton" id="bisentoBarrage">
+            Bisento Barrage
+            <br>
+            <small>250 Energy</small>
+        </button>
+
+        <button class="attackButton" id="ultimateDefense">
+            Ultimate Defense
+            <br>
+            <small>80 Energy</small>
+        </button>
+
+        <button class="attackButton" id="wayOfBisento">
+            Way Of The Bisento
+            <br>
+            <small>400 Energy</small>
+        </button>
+
+    </div>
+
+    <div id="battleEnd">
+
+        <div class="endCard">
+
+            <h2 id="endTitle">Victory!</h2>
+
+            <p id="endMessage"></p>
+
+            <button class="endButton" id="returnBattleButton">
+                Continue Exploring
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- Level popup -->
+
+<div id="levelPopup">
+    <div class="levelCard">
+        <h2>LEVEL UP!</h2>
+        <div>Hechie reached Level <span id="popupLevel">2</span></div>
+    </div>
+</div>
+
+
+<script>
+/* =========================================================
+   SOFTOY RPG TEST BUILD
+   Everything is contained in this single HTML file.
+========================================================= */
+
+
+/* =========================================================
+   SAVE SYSTEM
+========================================================= */
+
+const SAVE_KEY = "softoy_rpg_test_save";
+
+function saveGame(){
+
+    const data = {
+        player:{
+            x:game.player.x,
+            y:game.player.y,
+            level:game.hechie.level,
+            hp:game.hechie.hp,
+            energy:game.hechie.energy,
+            exp:game.hechie.exp
+        },
+        enemies:game.enemies.map(e=>({
+            id:e.id,
+            type:e.type,
+            x:e.x,
+            y:e.y,
+            alive:e.alive
+        }))
+    };
+
+    localStorage.setItem(SAVE_KEY,JSON.stringify(data));
+
+    document.getElementById("saveStatus").textContent =
+        "Game saved.";
+}
+
+function loadGame(){
+
+    const raw = localStorage.getItem(SAVE_KEY);
+
+    if(!raw) return false;
+
+    try{
+
+        const data = JSON.parse(raw);
+
+        game.player.x = data.player.x;
+        game.player.y = data.player.y;
+
+        game.hechie.level = data.player.level;
+        game.hechie.hp = data.player.hp;
+        game.hechie.energy = data.player.energy;
+        game.hechie.exp = data.player.exp;
+
+        return true;
+
+    }catch(error){
+
+        console.error(error);
+        return false;
+    }
+}
+
+
+/* =========================================================
+   GAME DATA
+========================================================= */
+
+const game = {
+
+    running:false,
+
+    worldWidth:5000,
+    worldHeight:3600,
+
+    cameraX:0,
+    cameraY:0,
+
+    player:{
+        x:550,
+        y:700,
+        speed:2.25
+    },
+
+    joystick:{
+        active:false,
+        dx:0,
+        dy:0
+    },
+
+    hechie:{
+        level:1,
+
+        hp:100,
+        maxHp:100,
+
+        energy:250,
+        maxEnergy:400,
+
+        attack:10,
+        defense:8,
+
+        exp:0,
+        nextExp:100
+    },
+
+    enemies:[],
+
+    enemyId:0,
+
+    battle:{
+        active:false,
+        enemies:[],
+        selected:0,
+        playerTurn:true,
+        defenseActive:false,
+        wayActive:false
+    }
+};
+
+
+/* =========================================================
+   ENEMY DATABASE
+========================================================= */
+
+const enemyTypes = {
+
+    grassling:{
+        name:"Grassling",
+        type:"grassling",
+        rarity:"Common",
+        baseHP:12,
+        hpIncrease:4,
+        baseAttack:2,
+        attackIncrease:1,
+        defense:1,
+        speed:10,
+        color:"#68b94e",
+        xp:20
+    },
+
+    pidgeoning:{
+        name:"Pidgeoning",
+        type:"pidgeoning",
+        rarity:"Uncommon",
+        baseHP:18,
+        hpIncrease:5,
+        baseAttack:3,
+        attackIncrease:1,
+        defense:2,
+        speed:14,
+        color:"#bcbcbc",
+        xp:28
+    },
+
+    rats:{
+        name:"Rat",
+        type:"rat",
+        rarity:"Common",
+        baseHP:16,
+        hpIncrease:4,
+        baseAttack:3,
+        attackIncrease:1,
+        defense:2,
+        speed:12,
+        color:"#77706a",
+        xp:22
+    },
+
+    eddieMinion:{
+        name:"Eddie Minion",
+        type:"minion",
+        rarity:"Rare",
+        baseHP:22,
+        hpIncrease:5,
+        baseAttack:4,
+        attackIncrease:1,
+        defense:3,
+        speed:11,
+        color:"#a95d45",
+        xp:35
+    },
+
+    armoredEddieMinion:{
+        name:"Armored Eddie Minion",
+        type:"armored",
+        rarity:"Common",
+        baseHP:30,
+        hpIncrease:6,
+        baseAttack:5,
+        attackIncrease:1,
+        defense:6,
+        speed:8,
+        color:"#6d737a",
+        xp:45
+    },
+
+    greenGrudger:{
+        name:"Green Grudger",
+        type:"grudger",
+        rarity:"Rare",
+        baseHP:70,
+        hpIncrease:8,
+        baseAttack:12,
+        attackIncrease:2,
+        defense:8,
+        speed:7,
+        color:"#23552b",
+        xp:100
+    },
+
+    mimicChest:{
+        name:"Mimic Chest",
+        type:"mimic",
+        rarity:"Super Rare",
+        baseHP:80,
+        hpIncrease:10,
+        baseAttack:15,
+        attackIncrease:2,
+        defense:10,
+        speed:5,
+        color:"#a46b35",
+        xp:140
+    }
+
+};
+
+
+/* =========================================================
+   ENEMY STAT SCALING
+   Stat = Base + ((Level - 1) × Increase)
+========================================================= */
+
+function getEnemyStats(typeName,level){
+
+    const data = enemyTypes[typeName];
+
+    return {
+
+        hp:
+            data.baseHP +
+            ((level-1)*data.hpIncrease),
+
+        attack:
+            data.baseAttack +
+            ((level-1)*data.attackIncrease),
+
+        defense:
+            data.defense,
+
+        speed:
+            data.speed,
+
+        xp:
+            data.xp +
+            ((level-1)*5)
+    };
+}
+
+
+/* =========================================================
+   DECORATIONS
+========================================================= */
+
+function createDecorations(){
+
+    const container =
+        document.getElementById("decorations");
+
+    container.innerHTML="";
+
+    const trees = [
+
+        [300,450],[430,380],[590,520],[760,430],
+        [930,300],[1100,430],[1320,300],[1450,520],
+        [400,1050],[550,1170],[850,1060],
+        [1050,900],[1450,980],[1600,1130],
+        [1700,1480],[2050,1330],[2200,1450],
+        [2450,950],[2700,850],[3000,1000],
+        [3150,720],[3400,850],[3650,750],
+        [3950,650],[4200,900],[4500,1050],
+        [3350,1700],[3600,1850],[3900,1700],
+        [4100,2000],[4450,2200],[3500,2450]
+    ];
+
+    trees.forEach((pos,i)=>{
+
+        const tree =
+            document.createElement("div");
+
+        tree.className =
+            "tree " + (i%4===0 ? "small":"");
+
+        tree.style.left =
+            pos[0]+"px";
+
+        tree.style.top =
+            pos[1]+"px";
+
+        tree.innerHTML =
+            `<div class="trunk"></div>
+             <div class="crown"></div>`;
+
+        container.appendChild(tree);
+    });
+
+
+    const bushes = [
+
+        [350,600],[520,610],[720,760],
+        [900,620],[1080,780],[1380,720],
+        [1550,600],[420,1250],[680,1330],
+        [950,1180],[1240,1270],[1500,1320],
+        [1770,900],[2050,850],[2320,1000],
+        [2550,1250],[2900,1050],[3150,1250],
+        [3450,1100],[3700,1250],[4000,1150],
+        [4250,1450],[4500,1550],[3300,2050],
+        [3700,2150],[4000,2350]
+    ];
+
+    bushes.forEach((pos,i)=>{
+
+        const bush =
+            document.createElement("div");
+
+        bush.className="bush";
+
+        bush.style.left =
+            pos[0]+"px";
+
+        bush.style.top =
+            pos[1]+"px";
+
+        container.appendChild(bush);
+
+        if(i%3===0){
+
+            for(let j=0;j<3;j++){
+
+                const berry =
+                    document.createElement("div");
+
+                berry.className="berry";
+
+                berry.style.left =
+                    (pos[0]+12+j*15)+"px";
+
+                berry.style.top =
+                    (pos[1]+12+(j%2)*8)+"px";
+
+                container.appendChild(berry);
+            }
+        }
+    });
+
+
+    const rocks = [
+
+        [800,830],[1160,1100],[1400,820],
+        [1850,1000],[2150,900],[2500,1400],
+        [2950,900],[3200,1400],[3750,1450],
+        [4200,1600],[4450,1850],[3500,2300]
+    ];
+
+    rocks.forEach(pos=>{
+
+        const rock =
+            document.createElement("div");
+
+        rock.className="rock";
+
+        rock.style.left =
+            pos[0]+"px";
+
+        rock.style.top =
+            pos[1]+"px";
+
+        container.appendChild(rock);
+    });
+}
+
+
+/* =========================================================
+   ENEMY SPAWNING
+========================================================= */
+
+function distance(a,b){
+
+    return Math.sqrt(
+        Math.pow(a.x-b.x,2)+
+        Math.pow(a.y-b.y,2)
+    );
+}
+
+
+function isInsideVisibleScreen(x,y){
+
+    const screenWidth =
+        window.innerWidth;
+
+    const screenHeight =
+        window.innerHeight;
+
+    return (
+        x >= game.cameraX &&
+        x <= game.cameraX+screenWidth &&
+        y >= game.cameraY &&
+        y <= game.cameraY+screenHeight
+    );
+}
+
+
+function isInSpawnBuffer(x,y){
+
+    const buffer = 280;
+
+    return (
+        x >= game.cameraX-buffer &&
+        x <= game.cameraX+window.innerWidth+buffer &&
+        y >= game.cameraY-buffer &&
+        y <= game.cameraY+window.innerHeight+buffer
+    );
+}
+
+
+function validEnemyPosition(x,y){
+
+    if(x<100 || y<100) return false;
+
+    if(
+        x>game.worldWidth-100 ||
+        y>game.worldHeight-100
+    ) return false;
+
+    if(
+        Math.abs(x-game.player.x)<380 &&
+        Math.abs(y-game.player.y)<380
+    ) return false;
+
+    if(isInSpawnBuffer(x,y)) return false;
+
+    return true;
+}
+
+
+function chooseEnemyType(){
+
+    const roll=Math.random();
+
+    if(roll<.35) return "grassling";
+    if(roll<.52) return "rats";
+    if(roll<.68) return "pidgeoning";
+    if(roll<.82) return "eddieMinion";
+    if(roll<.94) return "armoredEddieMinion";
+    if(roll<.985) return "greenGrudger";
+
+    return "mimicChest";
+}
+
+
+function spawnEnemy(){
+
+    let x;
+    let y;
+    let attempts=0;
+
+    do{
+
+        x=
+            Math.random()*
+            (game.worldWidth-300)+150;
+
+        y=
+            Math.random()*
+            (game.worldHeight-300)+150;
+
+        attempts++;
+
+    }while(
+        !validEnemyPosition(x,y) &&
+        attempts<100
+    );
+
+    if(attempts>=100) return;
+
+
+    const type =
+        chooseEnemyType();
+
+    const level =
+        Math.max(
+            1,
+            Math.min(
+                20,
+                Math.floor(1+Math.random()*8)
+            )
+        );
+
+    const stats =
+        getEnemyStats(type,level);
+
+    const enemy={
+
+        id:++game.enemyId,
+
+        type:type,
+
+        level:level,
+
+        x:x,
+        y:y,
+
+        hp:stats.hp,
+        maxHp:stats.hp,
+
+        attack:stats.attack,
+        defense:stats.defense,
+        speed:stats.speed,
+
+        xp:stats.xp,
+
+        alive:true,
+
+        moving:false,
+
+        vx:0,
+        vy:0,
+
+        moveTimer:0
+    };
+
+    game.enemies.push(enemy);
+
+    renderEnemy(enemy);
+}
+
+
+function initialSpawn(){
+
+    game.enemies=[];
+
+    document.getElementById("enemies").innerHTML="";
+
+    /*
+       The player gets a small safe area when entering.
+       Enemies already exist elsewhere in the world,
+       rather than appearing directly beside Hechie.
+    */
+
+    for(let i=0;i<16;i++){
+
+        spawnEnemy();
+    }
+}
+
+
+function renderEnemy(enemy){
+
+    if(!enemy.alive) return;
+
+    const container =
+        document.getElementById("enemies");
+
+    const element =
+        document.createElement("div");
+
+    element.className =
+        "enemy "+enemy.type;
+
+    element.dataset.id =
+        enemy.id;
+
+    element.innerHTML =
+        `<div class="enemyBody"></div>
+         <div class="enemyLabel">
+         Lv.${enemy.level} ${enemyTypes[enemy.type].name}
+         </div>`;
+
+    element.style.left =
+        enemy.x+"px";
+
+    element.style.top =
+        enemy.y+"px";
+
+    element.addEventListener(
+        "pointerdown",
+        function(e){
+
+            e.stopPropagation();
+
+            if(game.battle.active) return;
+
+            startBattle(enemy);
+        }
+    );
+
+    container.appendChild(element);
+}
+
+
+function updateEnemyMovement(){
+
+    game.enemies.forEach(enemy=>{
+
+        if(!enemy.alive) return;
+
+        /*
+           Enemies remain persistent.
+           They wander instead of respawning after every battle.
+        */
+
+        enemy.moveTimer--;
+
+        if(enemy.moveTimer<=0){
+
+            enemy.moveTimer =
+                80+
+                Math.random()*180;
+
+            const angle =
+                Math.random()*
+                Math.PI*2;
+
+            enemy.vx =
+                Math.cos(angle)*.35;
+
+            enemy.vy =
+                Math.sin(angle)*.35;
+        }
+
+        const oldX=enemy.x;
+        const oldY=enemy.y;
+
+        enemy.x += enemy.vx;
+        enemy.y += enemy.vy;
+
+        /*
+           Keep enemies within the broad world.
+        */
+
+        if(
+            enemy.x<100 ||
+            enemy.x>game.worldWidth-100
+        ){
+            enemy.x=oldX;
+            enemy.vx*=-1;
+        }
+
+        if(
+            enemy.y<100 ||
+            enemy.y>game.worldHeight-100
+        ){
+            enemy.y=oldY;
+            enemy.vy*=-1;
+        }
+
+        /*
+           Don't let enemies wander directly into Hechie.
+           This preserves the buffer around the player.
+        */
+
+        const d=
+            distance(
+                enemy,
+                game.player
+            );
+
+        if(d<250){
+
+            enemy.x=oldX;
+            enemy.y=oldY;
+
+            const angle=
+                Math.atan2(
+                    enemy.y-game.player.y,
+                    enemy.x-game.player.x
+                );
+
+            enemy.vx=
+                Math.cos(angle)*.5;
+
+            enemy.vy=
+                Math.sin(angle)*.5;
+        }
+
+        const el =
+            document.querySelector(
+                `.enemy[data-id="${enemy.id}"]`
+            );
+
+        if(el){
+
+            el.style.left=
+                enemy.x+"px";
+
+            el.style.top=
+                enemy.y+"px";
+        }
+    });
+}
+
+
+/* =========================================================
+   PLAYER / CAMERA
+========================================================= */
+
+function updatePlayer(){
+
+    if(!game.running) return;
+
+    const joy =
+        game.joystick;
+
+    game.player.x +=
+        joy.dx*
+        game.player.speed;
+
+    game.player.y +=
+        joy.dy*
+        game.player.speed;
+
+    game.player.x =
+        Math.max(
+            80,
+            Math.min(
+                game.worldWidth-80,
+                game.player.x
+            )
+        );
+
+    game.player.y =
+        Math.max(
+            80,
+            Math.min(
+                game.worldHeight-80,
+                game.player.y
+            )
+        );
+
+
+    /*
+       Camera follows Hechie.
+    */
+
+    game.cameraX =
+        game.player.x -
+        window.innerWidth/2;
+
+    game.cameraY =
+        game.player.y -
+        window.innerHeight/2;
+
+
+    game.cameraX =
+        Math.max(
+            0,
+            Math.min(
+                game.worldWidth-
+                window.innerWidth,
+                game.cameraX
+            )
+        );
+
+    game.cameraY =
+        Math.max(
+            0,
+            Math.min(
+                game.worldHeight-
+                window.innerHeight,
+                game.cameraY
+            )
+        );
+
+
+    document.getElementById("world").style.transform =
+        `translate(${-game.cameraX}px,${-game.cameraY}px)`;
+}
+
+
+/* =========================================================
+   JOYSTICK
+========================================================= */
+
+const joystick =
+    document.getElementById("joystick");
+
+const stick =
+    document.getElementById("stick");
+
+function joystickMove(clientX,clientY){
+
+    const rect =
+        joystick.getBoundingClientRect();
+
+    const centerX =
+        rect.left+
+        rect.width/2;
+
+    const centerY =
+        rect.top+
+        rect.height/2;
+
+    let dx=
+        clientX-centerX;
+
+    let dy=
+        clientY-centerY;
+
+    const max=40;
+
+    const length=
+        Math.sqrt(dx*dx+dy*dy);
+
+    if(length>max){
+
+        dx=
+            dx/length*max;
+
+        dy=
+            dy/length*max;
+    }
+
+    stick.style.left=
+        (40+dx)+"px";
+
+    stick.style.top=
+        (40+dy)+"px";
+
+    game.joystick.dx=
+        dx/max;
+
+    game.joystick.dy=
+        dy/max;
+}
+
+
+joystick.addEventListener(
+    "pointerdown",
+    e=>{
+
+        game.joystick.active=true;
+
+        joystick.setPointerCapture(e.pointerId);
+
+        joystickMove(
+            e.clientX,
+            e.clientY
+        );
+    }
+);
+
+
+joystick.addEventListener(
+    "pointermove",
+    e=>{
+
+        if(
+            !game.joystick.active
+        ) return;
+
+        joystickMove(
+            e.clientX,
+            e.clientY
+        );
+    }
+);
+
+
+function stopJoystick(){
+
+    game.joystick.active=false;
+
+    game.joystick.dx=0;
+    game.joystick.dy=0;
+
+    stick.style.left="40px";
+    stick.style.top="40px";
+}
+
+
+joystick.addEventListener(
+    "pointerup",
+    stopJoystick
+);
+
+joystick.addEventListener(
+    "pointercancel",
+    stopJoystick
+);
+
+
+/* =========================================================
+   PLAYER STATS
+========================================================= */
+
+function updateHUD(){
+
+    const h =
+        game.hechie;
+
+    document.getElementById("levelText").textContent=
+        h.level;
+
+    document.getElementById("hpText").textContent=
+        Math.max(0,Math.floor(h.hp));
+
+    document.getElementById("maxHpText").textContent=
+        h.maxHp;
+
+    document.getElementById("energyText").textContent=
+        Math.floor(h.energy);
+
+    document.getElementById("maxEnergyText").textContent=
+        h.maxEnergy;
+
+    document.getElementById("expText").textContent=
+        h.exp;
+
+    document.getElementById("nextExpText").textContent=
+        h.nextExp;
+
+    document.getElementById("attackText").textContent=
+        h.attack;
+
+    document.getElementById("defenseText").textContent=
+        h.defense;
+
+
+    document.getElementById("hpBar").style.width=
+        Math.max(
+            0,
+            h.hp/h.maxHp*100
+        )+"%";
+
+    document.getElementById("energyBar").style.width=
+        Math.max(
+            0,
+            h.energy/h.maxEnergy*100
+        )+"%";
+
+    document.getElementById("expBar").style.width=
+        Math.max(
+            0,
+            h.exp/h.nextExp*100
+        )+"%";
+}
+
+
+/* =========================================================
+   LEVEL SYSTEM
+========================================================= */
+
+function gainEXP(amount){
+
+    const h=
+        game.hechie;
+
+    h.exp += amount;
+
+    while(
+        h.exp>=h.nextExp &&
+        h.level<99
+    ){
+
+        h.exp -= h.nextExp;
+
+        h.level++;
+
+        /*
+           Example early-to-mid growth:
+           early levels rise more noticeably,
+           later levels require more EXP.
+        */
+
+        h.nextExp =
+            Math.floor(
+                100+
+                h.level*h.level*2.2+
+                h.level*35
+            );
+
+        h.maxHp +=
+            h.level<=30 ? 7 : 5;
+
+        h.hp =
+            h.maxHp;
+
+        h.maxEnergy +=
+            h.level<=30 ? 10 : 6;
+
+        h.energy =
+            h.maxEnergy;
+
+        h.attack +=
+            h.level<=30 ? 3 : 2;
+
+        h.defense +=
+            h.level<=30 ? 2 : 1;
+
+        showLevelUp();
+    }
+
+    updateHUD();
+}
+
+
+function showLevelUp(){
+
+    const popup=
+        document.getElementById(
+            "levelPopup"
+        );
+
+    document.getElementById(
+        "popupLevel"
+    ).textContent=
+        game.hechie.level;
+
+    popup.style.display="flex";
+
+    setTimeout(
+        ()=>{
+            popup.style.display="none";
+        },
+        1400
+    );
+}
+
+
+/* =========================================================
+   DAMAGE SYSTEM
+========================================================= */
+
+/*
+   Damage multiplier is applied to Attack first.
+
+   Then Defense is subtracted.
+
+   Minimum damage is always 1.
+
+   Final damage is rounded to a whole number.
+*/
+
+function calculateDamage(
+    attackerAttack,
+    multiplier,
+    defenderDefense
+){
+
+    let damage =
+        attackerAttack*
+        multiplier;
+
+    damage =
+        damage-
+        defenderDefense;
+
+    damage =
+        Math.max(
+            1,
+            damage
+        );
+
+    return Math.round(damage);
+}
+
+
+/* =========================================================
+   DAMAGE TYPES
+========================================================= */
+
+const damageChart={
+
+    Normal:{
+        Fire:1,
+        Wood:1,
+        Water:1,
+        Poison:1,
+        Electric:1,
+        Metal:1
+    },
+
+    Fire:{
+        Wood:2
+    },
+
+    Wood:{
+        Fire:.5,
+        Water:2
+    },
+
+    Water:{
+        Wood:.5,
+        Poison:2,
+        Electric:2,
+        Fire:2
+    },
+
+    Poison:{
+        Wood:.5,
+        Water:.5
+    },
+
+    Electric:{
+        Water:2
+    },
+
+    Metal:{
+
+    }
+};
+
+
+function getTypeMultiplier(
+    attackType,
+    defenderType
+){
+
+    if(
+        damageChart[attackType] &&
+        damageChart[attackType][defenderType]
+    ){
+
+        return damageChart[
+            attackType
+        ][
+            defenderType
+        ];
+    }
+
+    return 1;
+}
+
+
+/* =========================================================
+   FLOATING DAMAGE
+========================================================= */
+
+function floatingDamage(
+    x,
+    y,
+    amount
+){
+
+    const el=
+        document.createElement(
+            "div"
+        );
+
+    el.className="floatText";
+
+    el.textContent=
+        "-"+amount;
+
+    el.style.left=
+        (x-game.cameraX)+"px";
+
+    el.style.top=
+        (y-game.cameraY)+"px";
+
+    document.body.appendChild(el);
+
+    setTimeout(
+        ()=>el.remove(),
+        800
+    );
+}
+
+
+/* =========================================================
+   BATTLE START
+========================================================= */
+
+function startBattle(triggerEnemy){
+
+    if(
+        !triggerEnemy ||
+        !triggerEnemy.alive
+    ) return;
+
+    game.battle.active=true;
+
+    /*
+       Test randomizer:
+       1–3 enemies.
+
+       The touched enemy is always included.
+    */
+
+    const battleEnemies=[
+        triggerEnemy
+    ];
+
+    const count=
+        1+
+        Math.floor(
+            Math.random()*3
+        );
+
+    const available=
+        game.enemies.filter(
+            e=>
+                e.alive &&
+                e.id!==triggerEnemy.id &&
+                distance(
+                    e,
+                    triggerEnemy
+                )<650
+        );
+
+    while(
+        battleEnemies.length<count &&
+        available.length
+    ){
+
+        const index=
+            Math.floor(
+                Math.random()*
+                available.length
+            );
+
+        const enemy=
+            available.splice(
+                index,
+                1
+            )[0];
+
+        battleEnemies.push(enemy);
+    }
+
+    game.battle.enemies=
+        battleEnemies;
+
+    game.battle.selected=0;
+
+    game.battle.playerTurn=true;
+
+    game.battle.defenseActive=false;
+
+    game.battle.wayActive=false;
+
+    document.getElementById("battle").style.display=
+        "block";
+
+    document.getElementById("battleEnd").style.display=
+        "none";
+
+    updateBattleUI();
+
+    /*
+       The enemy stays in its world position.
+       It does not respawn after battle.
+    */
+
+}
+
+
+/* =========================================================
+   BATTLE UI
+========================================================= */
+
+function updateBattleUI(){
+
+    const enemies=
+        game.battle.enemies;
+
+    if(!enemies.length) return;
+
+    const selected=
+        enemies[
+            game.battle.selected
+        ];
+
+    document.getElementById(
+        "battleEnemyName"
+    ).textContent=
+        selected
+        ?
+        `${enemyTypes[selected.type].name} — Lv.${selected.level}`
+        :
+        "Enemy";
+
+    document.getElementById(
+        "battleEnemyStats"
+    ).textContent=
+        selected
+        ?
+        `HP ${Math.max(0,Math.floor(selected.hp))}/${selected.maxHp} • ATK ${selected.attack} • DEF ${selected.defense}`
+        :
+        "";
+
+    const panel=
+        document.getElementById(
+            "targetPanel"
+        );
+
+    panel.innerHTML=
+        "<b>SELECT TARGET</b>";
+
+    enemies.forEach(
+        (enemy,index)=>{
+
+            if(!enemy.alive) return;
+
+            const button=
+                document.createElement(
+                    "button"
+                );
+
+            button.className=
+                "targetButton"+
+                (
+                    index===
+                    game.battle.selected
+                    ?
+                    " selected"
+                    :
+                    ""
+                );
+
+            button.textContent=
+                `${index+1}. ${enemyTypes[enemy.type].name} Lv.${enemy.level} — ${Math.max(0,Math.floor(enemy.hp))} HP`;
+
+            button.onclick=()=>{
+
+                game.battle.selected=
+                    index;
+
+                updateBattleUI();
+            };
+
+            panel.appendChild(button);
+        }
+    );
+
+
+    const h=
+        game.hechie;
+
+    document.getElementById(
+        "doubleSlash"
+    ).disabled=
+        h.level<1 ||
+        h.energy<25;
+
+    document.getElementById(
+        "poisonStab"
+    ).disabled=
+        h.level<10 ||
+        h.energy<50;
+
+    document.getElementById(
+        "spikeBomb"
+    ).disabled=
+        h.level<25 ||
+        h.energy<100;
+
+    document.getElementById(
+        "bisentoBarrage"
+    ).disabled=
+        h.level<50 ||
+        h.energy<250;
+
+    document.getElementById(
+        "ultimateDefense"
+    ).disabled=
+        h.level<75 ||
+        h.energy<80;
+
+    document.getElementById(
+        "wayOfBisento"
+    ).disabled=
+        h.level<99 ||
+        h.energy<400;
+}
+
+
+/* =========================================================
+   BATTLE MESSAGE
+========================================================= */
+
+function battleMessage(text){
+
+    document.getElementById(
+        "battleMessage"
+    ).textContent=
+        text;
+}
+
+
+/* =========================================================
+   TARGET
+========================================================= */
+
+function getSelectedEnemy(){
+
+    const enemy=
+        game.battle.enemies[
+            game.battle.selected
+        ];
+
+    if(
+        enemy &&
+        enemy.alive
+    ){
+
+        return enemy;
+    }
+
+    return game.battle.enemies.find(
+        e=>e.alive
+    );
+}
+
+
+/* =========================================================
+   BASIC ATTACK
+========================================================= */
+
+document.getElementById(
+    "basicAttack"
+).onclick=()=>{
+
+    if(!game.battle.playerTurn) return;
+
+    const enemy=
+        getSelectedEnemy();
+
+    if(!enemy) return;
+
+    const damage=
+        calculateDamage(
+            game.hechie.attack,
+            1,
+            enemy.defense
+        );
+
+    enemy.hp -= damage;
+
+    battleMessage(
+        `Hechie attacks ${enemyTypes[enemy.type].name} for ${damage} damage!`
+    );
+
+    updateBattleUI();
+
+    checkEnemyDefeated(enemy);
+
+    if(game.battle.active){
+
+        enemyTurn();
+    }
+};
+
+
+/* =========================================================
+   DOUBLE SLASH
+========================================================= */
+
+document.getElementById(
+    "doubleSlash"
+).onclick=()=>{
+
+    if(
+        game.hechie.energy<25
+    ) return;
+
+    const enemy=
+        getSelectedEnemy();
+
+    if(!enemy) return;
+
+    game.hechie.energy-=25;
+
+    const first=
+        calculateDamage(
+            game.hechie.attack,
+            1,
+            enemy.defense
+        );
+
+    enemy.hp-=first;
+
+    if(enemy.alive){
+
+        const second=
+            calculateDamage(
+                game.hechie.attack,
+                1.5,
+                enemy.defense
+            );
+
+        enemy.hp-=second;
+
+        battleMessage(
+            `Double Slash dealt ${first} + ${second} damage!`
+        );
+
+    }else{
+
+        battleMessage(
+            `Double Slash defeated the enemy with its first hit!`
+        );
+    }
+
+    updateHUD();
+
+    checkEnemyDefeated(enemy);
+
+    if(game.battle.active){
+
+        enemyTurn();
+    }
+};
+
+
+/* =========================================================
+   POISON STAB
+========================================================= */
+
+document.getElementById(
+    "poisonStab"
+).onclick=()=>{
+
+    if(
+        game.hechie.energy<50 ||
+        game.hechie.level<10
+    ) return;
+
+    const enemy=
+        getSelectedEnemy();
+
+    if(!enemy) return;
+
+    game.hechie.energy-=50;
+
+    const damage=
+        calculateDamage(
+            game.hechie.attack,
+            .8,
+            enemy.defense
+        );
+
+    enemy.hp-=damage;
+
+    /*
+       Poison damage is 0.2x Attack
+       per round until the enemy dies.
+    */
+
+    enemy.poisoned=true;
+
+    battleMessage(
+        `Poison Stab dealt ${damage} damage and poisoned the enemy!`
+    );
+
+    updateHUD();
+
+    checkEnemyDefeated(enemy);
+
+    if(game.battle.active){
+
+        enemyTurn();
+    }
+};
+
+
+/* =========================================================
+   SPIKE BOMB — AOE
+========================================================= */
+
+document.getElementById(
+    "spikeBomb"
+).onclick=()=>{
+
+    if(
+        game.hechie.energy<100 ||
+        game.hechie.level<25
+    ) return;
+
+    game.hechie.energy-=100;
+
+    let message="Spike Bomb hit all enemies! ";
+
+    game.battle.enemies.forEach(
+        enemy=>{
+
+            if(!enemy.alive) return;
+
+            const damage=
+                calculateDamage(
+                    game.hechie.attack,
+                    1.2,
+                    enemy.defense
+                );
+
+            enemy.hp-=damage;
+
+            enemy.poisoned=true;
+
+            message+=
+                `${damage} damage. `;
+        }
+    );
+
+    battleMessage(message);
+
+    updateHUD();
+
+    game.battle.enemies.forEach(
+        checkEnemyDefeated
+    );
+
+    if(game.battle.active){
+
+        enemyTurn();
+    }
+};
+
+
+/* =========================================================
+   BISENTO BARRAGE
+========================================================= */
+
+document.getElementById(
+    "bisentoBarrage"
+).onclick=()=>{
+
+    if(
+        game.hechie.energy<250 ||
+        game.hechie.level<50
+    ) return;
+
+    const enemy=
+        getSelectedEnemy();
+
+    if(!enemy) return;
+
+    game.hechie.energy-=250;
+
+    let total=0;
+
+    /*
+       8–16 rapid hits.
+       Each hit is 0.2x.
+       Final stab is 1.8x.
+    */
+
+    const hits=
+        8+
+        Math.floor(
+            Math.random()*9
+        );
+
+    for(
+        let i=0;
+        i<hits;
+        i++
+    ){
+
+        const damage=
+            calculateDamage(
+                game.hechie.attack,
+                .2,
+                enemy.defense
+            );
+
+        enemy.hp-=damage;
+
+        total+=damage;
+
+        if(enemy.hp<=0) break;
+    }
+
+    if(enemy.alive){
+
+        const finalDamage=
+            calculateDamage(
+                game.hechie.attack,
+                1.8,
+                enemy.defense
+            );
+
+        enemy.hp-=finalDamage;
+
+        total+=finalDamage;
+    }
+
+    battleMessage(
+        `Bisento Barrage struck ${hits} times before the final stab! Total damage: ${total}.`
+    );
+
+    updateHUD();
+
+    checkEnemyDefeated(enemy);
+
+    if(game.battle.active){
+
+        enemyTurn();
+    }
+};
+
+
+/* =========================================================
+   ULTIMATE DEFENSE
+========================================================= */
+
+document.getElementById(
+    "ultimateDefense"
+).onclick=()=>{
+
+    if(
+        game.hechie.energy<80 ||
+        game.hechie.level<75
+    ) return;
+
+    game.hechie.energy-=80;
+
+    game.battle.defenseActive=true;
+
+    battleMessage(
+        "Hechie curls into a ball and opens his spikes! Damage will be reflected this turn."
+    );
+
+    updateHUD();
+
+    enemyTurn();
+};
+
+
+/* =========================================================
+   WAY OF THE BISENTO
+========================================================= */
+
+document.getElementById(
+    "wayOfBisento"
+).onclick=()=>{
+
+    if(
+        game.hechie.energy<400 ||
+        game.hechie.level<99
+    ) return;
+
+    game.hechie.energy-=400;
+
+    game.battle.wayActive=true;
+
+    /*
+       Attack x5
+       Energy capacity x2
+       One 200 HP shield
+       Lasts 5 turns.
+    */
+
+    game.hechie.attack*=5;
+
+    game.hechie.maxEnergy*=2;
+
+    game.hechie.energy=
+        Math.min(
+            game.hechie.energy,
+            game.hechie.maxEnergy
+        );
+
+    game.hechie.shield=200;
+
+    game.hechie.wayTurns=5;
+
+    battleMessage(
+        "WAY OF THE BISENTO! Hechie's golden aura erupts around him!"
+    );
+
+    updateHUD();
+
+    enemyTurn();
+};
+
+
+/* =========================================================
+   ENEMY DEFEATED
+========================================================= */
+
+function checkEnemyDefeated(enemy){
+
+    if(
+        !enemy ||
+        enemy.hp>0 ||
+        !enemy.alive
+    ) return;
+
+    enemy.alive=false;
+
+    enemy.hp=0;
+
+    gainEXP(enemy.xp);
+
+    /*
+       Remove its visual representation,
+       but DO NOT respawn another enemy
+       in the same place.
+
+       This is the persistence behaviour
+       being tested.
+    */
+
+    const el=
+        document.querySelector(
+            `.enemy[data-id="${enemy.id}"]`
+        );
+
+    if(el){
+        el.remove();
+    }
+
+    battleMessage(
+        `${enemyTypes[enemy.type].name} defeated! +${enemy.xp} EXP`
+    );
+
+    updateBattleUI();
+
+    if(
+        game.battle.enemies.every(
+            e=>!e.alive
+        )
+    ){
+
+        victory();
+    }
+}
+
+
+/* =========================================================
+   POISON / ENEMY TURN
+========================================================= */
+
+function enemyTurn(){
+
+    game.battle.playerTurn=false;
+
+    setTimeout(
+        ()=>{
+
+            /*
+               Poison happens each enemy round.
+            */
+
+            game.battle.enemies.forEach(
+                enemy=>{
+
+                    if(
+                        !enemy.alive ||
+                        !enemy.poisoned
+                    ) return;
+
+                    const poisonDamage=
+                        Math.max(
+                            1,
+                            Math.round(
+                                game.hechie.attack*.2
+                            )
+                        );
+
+                    enemy.hp-=poisonDamage;
+
+                    if(enemy.hp<=0){
+
+                        enemy.hp=0;
+
+                        checkEnemyDefeated(enemy);
+                    }
+                }
+            );
+
+
+            if(
+                !game.battle.active
+            ) return;
+
+
+            const living=
+                game.battle.enemies.filter(
+                    e=>e.alive
+                );
+
+            if(!living.length){
+
+                victory();
+
+                return;
+            }
+
+
+            /*
+               Enemies attack Hechie.
+            */
+
+            living.forEach(
+                enemy=>{
+
+                    if(
+                        game.hechie.hp<=0
+                    ) return;
+
+                    let damage=
+                        calculateDamage(
+                            enemy.attack,
+                            1,
+                            game.hechie.defense
+                        );
+
+
+                    /*
+                       Shield absorbs damage first.
+                    */
+
+                    if(
+                        game.hechie.shield>0
+                    ){
+
+                        const absorbed=
+                            Math.min(
+                                game.hechie.shield,
+                                damage
+                            );
+
+                        game.hechie.shield -=
+                            absorbed;
+
+                        damage -=
+                            absorbed;
+                    }
+
+
+                    if(
+                        game.battle.defenseActive
+                    ){
+
+                        /*
+                           Ultimate Defense reflects
+                           all ordinary damage.
+                        */
+
+                        const reflected=
+                            damage;
+
+                        enemy.hp -=
+                            reflected;
+
+                        /*
+                           Effects / boss attacks aren't
+                           part of this test.
+                        */
+
+                        damage=0;
+
+                        battleMessage(
+                            `Ultimate Defense reflected ${reflected} damage!`
+                        );
+
+                        checkEnemyDefeated(enemy);
+
+                    }else{
+
+                        game.hechie.hp -=
+                            damage;
+                    }
+                }
+            );
+
+
+            game.battle.defenseActive=false;
+
+            updateHUD();
+
+            if(
+                game.hechie.hp<=0
+            ){
+
+                defeat();
+
+                return;
+            }
+
+
+            /*
+               Way Of The Bisento lasts five turns.
+            */
+
+            if(
+                game.battle.wayActive
+            ){
+
+                game.hechie.wayTurns--;
+
+                if(
+                    game.hechie.wayTurns<=0
+                ){
+
+                    game.hechie.attack =
+                        Math.max(
+                            1,
+                            game.hechie.attack/5
+                        );
+
+                    game.hechie.maxEnergy =
+                        Math.max(
+                            1,
+                            game.hechie.maxEnergy/2
+                        );
+
+                    game.battle.wayActive=false;
+
+                    battleMessage(
+                        "Way Of The Bisento has ended."
+                    );
+                }
+            }
+
+            game.battle.playerTurn=true;
+
+            updateBattleUI();
+
+        },
+        600
+    );
+}
+
+
+/* =========================================================
+   VICTORY
+========================================================= */
+
+function victory(){
+
+    game.battle.active=false;
+
+    document.getElementById(
+        "battleEnd"
+    ).style.display=
+        "flex";
+
+    document.getElementById(
+        "endTitle"
+    ).textContent=
+        "Victory!";
+
+    document.getElementById(
+        "endMessage"
+    ).textContent=
+        "All enemies have been defeated. The defeated enemies remain gone from the world.";
+
+    saveGame();
+}
+
+
+/* =========================================================
+   DEFEAT
+========================================================= */
+
+function defeat(){
+
+    game.battle.active=false;
+
+    document.getElementById(
+        "battleEnd"
+    ).style.display=
+        "flex";
+
+    document.getElementById(
+        "endTitle"
+    ).textContent=
+        "Defeated";
+
+    document.getElementById(
+        "endMessage"
+    ).textContent=
+        "Hechie was knocked out. Return to the test world.";
+
+}
+
+
+/* =========================================================
+   RETURN FROM BATTLE
+========================================================= */
+
+document.getElementById(
+    "returnBattleButton"
+).onclick=()=>{
+
+    document.getElementById(
+        "battle"
+    ).style.display=
+        "none";
+
+    document.getElementById(
+        "battleEnd"
+    ).style.display=
+        "none";
+
+    game.battle.active=false;
+
+    /*
+       If Hechie lost, restore enough health
+       for continued testing.
+    */
+
+    if(
+        game.hechie.hp<=0
+    ){
+
+        game.hechie.hp=
+            Math.round(
+                game.hechie.maxHp*.5
+            );
+    }
+
+    updateHUD();
+};
+
+
+/* =========================================================
+   MENU
+========================================================= */
+
+document.getElementById(
+    "menuButton"
+).onclick=()=>{
+
+    const menu=
+        document.getElementById(
+            "menu"
+        );
+
+    menu.style.display=
+        menu.style.display==="block"
+        ?
+        "none"
+        :
+        "block";
+};
+
+
+document.getElementById(
+    "resumeButton"
+).onclick=()=>{
+
+    document.getElementById(
+        "menu"
+    ).style.display=
+        "none";
+};
+
+
+document.getElementById(
+    "saveButton"
+).onclick=()=>{
+
+    saveGame();
+
+    document.getElementById(
+        "menu"
+    ).style.display=
+        "none";
+};
+
+
+document.getElementById(
+    "resetButton"
+).onclick=()=>{
+
+    saveGame();
+
+    game.running=false;
+
+    document.getElementById(
+        "game"
+    ).style.display=
+        "none";
+
+    document.getElementById(
+        "startScreen"
+    ).style.display=
+        "flex";
+
+    document.getElementById(
+        "menu"
+    ).style.display=
+        "none";
+};
+
+
+/* =========================================================
+   START NEW STORY
+========================================================= */
+
+function startNewStory(){
+
+    /*
+       Completely reset the test world.
+       This is deliberately independent from
+       localStorage so New Story always works.
+    */
+
+    game.running=true;
+
+    game.player.x=550;
+    game.player.y=700;
+
+    game.hechie.level=1;
+
+    game.hechie.hp=100;
+    game.hechie.maxHp=100;
+
+    game.hechie.energy=250;
+    game.hechie.maxEnergy=400;
+
+    game.hechie.attack=10;
+    game.hechie.defense=8;
+
+    game.hechie.exp=0;
+    game.hechie.nextExp=100;
+
+    game.hechie.shield=0;
+
+    game.cameraX=0;
+    game.cameraY=0;
+
+    game.enemies=[];
+
+    game.enemyId=0;
+
+    document.getElementById(
+        "startScreen"
+    ).style.display=
+        "none";
+
+    document.getElementById(
+        "game"
+    ).style.display=
+        "block";
+
+    createDecorations();
+
+    initialSpawn();
+
+    updateHUD();
+
+    updatePlayer();
+
+    /*
+       Autosave after the world has initialized.
+    */
+
+    saveGame();
+}
+
+
+/* =========================================================
+   CONTINUE STORY
+========================================================= */
+
+function continueStory(){
+
+    const exists=
+        localStorage.getItem(
+            SAVE_KEY
+        );
+
+    if(!exists){
+
+        startNewStory();
+
+        return;
+    }
+
+    game.running=true;
+
+    document.getElementById(
+        "startScreen"
+    ).style.display=
+        "none";
+
+    document.getElementById(
+        "game"
+    ).style.display=
+        "block";
+
+    createDecorations();
+
+    /*
+       Load saved player state.
+    */
+
+    const loaded=
+        loadGame();
+
+    if(!loaded){
+
+        startNewStory();
+
+        return;
+    }
+
+    /*
+       Enemy positions are regenerated only
+       if an old save doesn't contain them.
+    */
+
+    initialSpawn();
+
+    updateHUD();
+
+    updatePlayer();
+}
+
+
+/* =========================================================
+   NEW STORY BUTTON
+========================================================= */
+
+document.getElementById(
+    "newStoryButton"
+).addEventListener(
+    "click",
+    function(){
+
+        startNewStory();
+
+    }
+);
+
+
+/* =========================================================
+   CONTINUE BUTTON
+========================================================= */
+
+document.getElementById(
+    "continueButton"
+).addEventListener(
+    "click",
+    function(){
+
+        continueStory();
+
+    }
+);
+
+
+/* =========================================================
+   START SCREEN SAVE STATUS
+========================================================= */
+
+if(
+    localStorage.getItem(
+        SAVE_KEY
+    )
+){
+
+    document.getElementById(
+        "saveStatus"
+    ).textContent=
+        "A saved story is available.";
+
+}else{
+
+    document.getElementById(
+        "saveStatus"
+    ).textContent=
+        "No saved story yet.";
+}
+
+
+/* =========================================================
+   MAIN GAME LOOP
+========================================================= */
+
+let lastTime=0;
+
+function gameLoop(timestamp){
+
+    const delta=
+        timestamp-lastTime;
+
+    lastTime=timestamp;
+
+    if(
+        game.running &&
+        !game.battle.active
+    ){
+
+        updatePlayer();
+
+        /*
+           Wander slowly so the world feels alive,
+           but do not respawn defeated enemies.
+        */
+
+        if(delta>0){
+
+            updateEnemyMovement();
+        }
+    }
+
+    requestAnimationFrame(
+        gameLoop
+    );
+}
+
+requestAnimationFrame(
+    gameLoop
+);
+
+
+/* =========================================================
+   KEYBOARD TEST CONTROLS
+   Useful on desktop but does not replace joystick.
+========================================================= */
+
+const keys={};
+
+window.addEventListener(
+    "keydown",
+    e=>{
+
+        keys[e.key.toLowerCase()]=true;
+
+        if(
+            !game.running ||
+            game.battle.active
+        ) return;
+
+        let dx=0;
+        let dy=0;
+
+        if(keys["w"] || keys["arrowup"])
+            dy=-1;
+
+        if(keys["s"] || keys["arrowdown"])
+            dy=1;
+
+        if(keys["a"] || keys["arrowleft"])
+            dx=-1;
+
+        if(keys["d"] || keys["arrowright"])
+            dx=1;
+
+        const length=
+            Math.sqrt(
+                dx*dx+
+                dy*dy
+            );
+
+        if(length>0){
+
+            game.player.x +=
+                dx/length*
+                game.player.speed;
+
+            game.player.y +=
+                dy/length*
+                game.player.speed;
+        }
+    }
+);
+
+window.addEventListener(
+    "keyup",
+    e=>{
+
+        keys[e.key.toLowerCase()]=false;
+    }
+);
+
+
+/* =========================================================
+   TOUCH SAFETY
+========================================================= */
+
+document.addEventListener(
+    "touchmove",
+    function(e){
+
+        if(
+            game.running
+        ){
+
+            e.preventDefault();
+        }
+
+    },
+    {passive:false}
+);
+
+
+/* =========================================================
+   AUTO SAVE
+========================================================= */
+
+setInterval(
+    ()=>{
+
+        if(
+            game.running &&
+            !game.battle.active
+        ){
+
+            saveGame();
+        }
+
+    },
+    15000
+);
+
+
+/* =========================================================
+   FINAL INITIALIZATION
+========================================================= */
+
+updateHUD();
+
+</script>
+
+</body>
+</html>
